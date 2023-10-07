@@ -1,6 +1,6 @@
 const express = require('express');
 const app = new express();
-// const userAuthRoute = require('./Route/userRoute');
+ const userAuthRoute = require('./Routers/userRoute');
 // const courseRoute = require('./Route/courseRoutes');
  const cookieParser = require('cookie-parser');
  const cors = require('cors');

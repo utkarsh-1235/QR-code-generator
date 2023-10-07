@@ -1,11 +1,11 @@
-const userModel = require('../Models/userSchema.js');
+const userModel = require('../Models/userModel');
 const emailValidator = require('email-validator');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const cloudinary = require('cloudinary');
-const AppError = require('../Utils/error.utils.js');
+//const AppError = require('../Utils/error.utils.js');
 const fs = require('fs/promises');
-const sendEmail = require('../Utils/sendmail.util.js');
+//const sendEmail = require('../Utils/sendmail.util.js');
 
 
 const cookieOptions = {
@@ -23,73 +23,73 @@ const cookieOptions = {
  ******************************************************/
 
 const register = async(req, res, next)=>{
-    const {fullName, email, password, avatar, role } = req.body;
-    console.log(fullName, email, password, role);
+    // const {fullName, email, password, avatar, role } = req.body;
+    // console.log(fullName, email, password, role);
 
-      /// every field is required
-    if(!fullName || !email || !password || !role){
-        return next(new AppError("Every field is required", 400));
-    }
-    const userExists = await userModel.findOne({ email});
+    //   /// every field is required
+    // if(!fullName || !email || !password || !role){
+    //     return next(new AppError("Every field is required", 400));
+    // }
+    // const userExists = await userModel.findOne({ email});
 
-    if(userExists){
-       return next( new AppError("Email already exists", 400));
-    }
+    // if(userExists){
+    //    return next( new AppError("Email already exists", 400));
+    // }
 
-    const user = await userModel.create({
-       fullName,
-       email,
-       password,
-       avatar: {
-         public_id: email,
-         secure_url: "https://res.cloudinary.com/du9jzqlpt/image/upload/v1674647316/avatar_drzgxv.jpg"
-       },
-       role
+    // const user = await userModel.create({
+    //    fullName,
+    //    email,
+    //    password,
+    //    avatar: {
+    //      public_id: email,
+    //      secure_url: "https://res.cloudinary.com/du9jzqlpt/image/upload/v1674647316/avatar_drzgxv.jpg"
+    //    },
+    //    role
 
-    });
+    // });
 
-    if(!user){
-      return next(new AppError('User registration failed, please try again', 400));
-    }
+    // if(!user){
+    //   return next(new AppError('User registration failed, please try again', 400));
+    // }
         
-    console.log('File Details > ', JSON.stringify(req.file));
-    if(req.file){
-      try{
-        const result = await cloudinary.v2.uploader.upload(req.file.path, {
-            folder: 'lms',
-            width: 100,
-            height: 100,
-            gravity: 'faces',
-            crop: 'fill'
-        });
-        console.log(result);
+    // console.log('File Details > ', JSON.stringify(req.file));
+    // if(req.file){
+    //   try{
+    //     const result = await cloudinary.v2.uploader.upload(req.file.path, {
+    //         folder: 'lms',
+    //         width: 100,
+    //         height: 100,
+    //         gravity: 'faces',
+    //         crop: 'fill'
+    //     });
+    //     console.log(result);
 
-        if(result) {
-          user.avatar.public_id = result.public_id;
-          user.avatar.secure_url = result.secure_url;
+    //     if(result) {
+    //       user.avatar.public_id = result.public_id;
+    //       user.avatar.secure_url = result.secure_url;
 
-          // Remove file from server
-          fs.rm(`uploads/${req.file.filename}`)
-        }
-      await user.save();
-      }
-      catch(e){
-        return next(new AppError(e || 'File not uploaded, please try again',500 ))
-      }
-    }
-    await user.save();
+    //       // Remove file from server
+    //       fs.rm(`uploads/${req.file.filename}`)
+    //     }
+    //   await user.save();
+    //   }
+    //   catch(e){
+    //     return next(new AppError(e || 'File not uploaded, please try again',500 ))
+    //   }
+    // }
+    // await user.save();
 
-    user.password = undefined;
+    // user.password = undefined;
 
-    const token = await user.jwtToken();
+    // const token = await user.jwtToken();
 
-    res.cookie('token', token, cookieOptions)
+    // res.cookie('token', token, cookieOptions)
 
-    res.status(201).json({
-      success: true,
-      message: 'User registered successfully', 
-      user,
-    })
+    // res.status(201).json({
+    //   success: true,
+    //   message: 'User registered successfully', 
+    //   user,
+    // })
      
   };
 
@@ -104,35 +104,35 @@ const register = async(req, res, next)=>{
   
 const login = async (req, res, next) => {
   
-  try {
-    const {email, password } = req.body;
+//   try {
+//     const {email, password } = req.body;
   
-    console.log(email, password);
+//     console.log(email, password);
 
-    if(!email || !password){
-      return next(new AppError('All fields are required', 400));
-    }
-    const user = await userModel.findOne({
-      email
-    }).select('+password');
+//     if(!email || !password){
+//       return next(new AppError('All fields are required', 400));
+//     }
+//     const user = await userModel.findOne({
+//       email
+//     }).select('+password');
 
-    if(!user || !user.comparePassword(password)){
-      return next(new AppError('Email or password does not match', 400));
-    }
+//     if(!user || !user.comparePassword(password)){
+//       return next(new AppError('Email or password does not match', 400));
+//     }
 
-    const token = await user.jwtToken();
-     user.password = undefined;
+//     const token = await user.jwtToken();
+//      user.password = undefined;
 
-     res.cookie('token', token, cookieOptions);
+//      res.cookie('token', token, cookieOptions);
 
-     res.status(200).json({
-      success: true,
-      message: 'User loggedin successfully',
-      user
-     });
-  } catch (err) {
-    return next(new AppError(err.message, 500));
-  }
+//      res.status(200).json({
+//       success: true,
+//       message: 'User loggedin successfully',
+//       user
+//      });
+//   } catch (err) {
+//     return next(new AppError(err.message, 500));
+//   }
 };
 
 
@@ -165,19 +165,19 @@ const login = async (req, res, next) => {
    */
 
   const getprofile = async(req, res, next)=>{
-     try{
-       const userId = req.user.id;
-       const user = await userModel.findById(userId);
+    //  try{
+    //    const userId = req.user.id;
+    //    const user = await userModel.findById(userId);
           
-       console.log(user);
-       res.status(200).json({
-        success: true,
-        message: 'User details',
-        user
-       });
-     } catch(e){
-      return next(new AppError('Failed to fetch profile',500));
-     }
+    //    console.log(user);
+    //    res.status(200).json({
+    //     success: true,
+    //     message: 'User details',
+    //     user
+    //    });
+    //  } catch(e){
+    //   return next(new AppError('Failed to fetch profile',500));
+    //  }
   };
 /******************************************************
  * @FORGOTPASSWORD
@@ -188,48 +188,48 @@ const login = async (req, res, next) => {
  ******************************************************/
 
 const forgotPassword = async (req, res, next) => {
-    const {email} = req.body;
-    console.log(email);
-    // return response with error message If email is undefined
-    if (!email) {
-      return next(new AppError('Email is required', 400));
-    }
+    // const {email} = req.body;
+    // console.log(email);
+    // // return response with error message If email is undefined
+    // if (!email) {
+    //   return next(new AppError('Email is required', 400));
+    // }
 
-    // retrieve user using given email.
-    const user = await userModel.findOne({
-      email
-    });
+    // // retrieve user using given email.
+    // const user = await userModel.findOne({
+    //   email
+    // });
   
-    // return response with error message user not found
-    if(!user){
-      return next(new AppError('user not found 🙅',400));
-    }
+    // // return response with error message user not found
+    // if(!user){
+    //   return next(new AppError('user not found 🙅',400));
+    // }
 
-    // generate reset password token with userSchema method getResetPasswordToken()
-    const resetToken = await user. getForgotPasswordResetToken()
-      await user.save();
+    // // generate reset password token with userSchema method getResetPasswordToken()
+    // const resetToken = await user. getForgotPasswordResetToken()
+    //   await user.save();
   
-      const resetPasswordUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
-      console.log(resetPasswordUrl);
+    //   const resetPasswordUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+    //   console.log(resetPasswordUrl);
 
-      const subject = 'Reset Password';
-    const message = `You can reset your password by clicking <a href=${resetPasswordUrl} target="_blank">Reset your password</a>\nIf the above link does not work for some reason then copy paste this link in new tab ${resetPasswordUrl}.\n If you have not requested this, kindly ignore.`;
+    //   const subject = 'Reset Password';
+    // const message = `You can reset your password by clicking <a href=${resetPasswordUrl} target="_blank">Reset your password</a>\nIf the above link does not work for some reason then copy paste this link in new tab ${resetPasswordUrl}.\n If you have not requested this, kindly ignore.`;
 
-      try{
-          await sendEmail(email, subject, message);
-          return res.status(201).json({
-         success: true,
-         message: `Reset password token has been sent to ${email} successfully`
-       })
+    //   try{
+    //       await sendEmail(email, subject, message);
+    //       return res.status(201).json({
+    //      success: true,
+    //      message: `Reset password token has been sent to ${email} successfully`
+    //    })
        
-      }
-      catch(err){
-        user.forgotPasswordExpiry = undefined;
-           user.forgotPasswordToken = undefined;
+    //   }
+    //   catch(err){
+    //     user.forgotPasswordExpiry = undefined;
+    //        user.forgotPasswordToken = undefined;
 
-           await user.save();
-           return next(new AppError(err.message,500));
-      }
+    //        await user.save();
+    //        return next(new AppError(err.message,500));
+    //   }
     } 
   
 
@@ -244,149 +244,149 @@ const forgotPassword = async (req, res, next) => {
    ******************************************************/
   
   const resetPassword = async (req, res, next) => {
-    const { resetToken } = req.params;
-    const { password } = req.body;
+    // const { resetToken } = req.params;
+    // const { password } = req.body;
   
     
     
-    const forgotPasswordToken = crypto.createHash("sha256").update(token).digest("hex");
+    // const forgotPasswordToken = crypto.createHash("sha256").update(token).digest("hex");
   
-    try {
-      const user = await userModel.findOne({
-        forgotPasswordToken,
-        forgotPasswordExpiryDate: {
-          $gt: Date.now()
-        }
-      });
+    // try {
+    //   const user = await userModel.findOne({
+    //     forgotPasswordToken,
+    //     forgotPasswordExpiryDate: {
+    //       $gt: Date.now()
+    //     }
+    //   });
   
-      // return the message if user not found
-      if (!user) {
-        return next(new AppError("Invalid Token or token is expired", 400))
-      }
+    //   // return the message if user not found
+    //   if (!user) {
+    //     return next(new AppError("Invalid Token or token is expired", 400))
+    //   }
   
-      user.password = password;
-      user.forgotpasswordToken = undefined;
-      user.forgotpasswordExpiry = undefined;
+    //   user.password = password;
+    //   user.forgotpasswordToken = undefined;
+    //   user.forgotpasswordExpiry = undefined;
       
-      user.save();
+    //   user.save();
   
-      return res.status(200).json({
-        success: true,
-        message: "successfully reset the password"
-      });
-    } catch (error) {
-      return next(new AppError(err.message,400));
-    }
+    //   return res.status(200).json({
+    //     success: true,
+    //     message: "successfully reset the password"
+    //   });
+    // } catch (error) {
+    //   return next(new AppError(err.message,400));
+    // }
   };
   
   
 const changePassword = async(req, res, next)=>{
     
-  const {oldPassword, newPassword} = req.body;
+//   const {oldPassword, newPassword} = req.body;
 
-  const {id} = req.user;
+//   const {id} = req.user;
 
-  if(!oldPassword || !newPassword){
-    return next(
-      new AppError('All fields are mandatory', 400)
-  )
-  }
+//   if(!oldPassword || !newPassword){
+//     return next(
+//       new AppError('All fields are mandatory', 400)
+//   )
+//   }
 
-  const user = await userModel.findById(id).select('+password');
+//   const user = await userModel.findById(id).select('+password');
 
-  if(!user){
-    return next(
-      new AppError('User does not exist', 400)
-    )
-}
+//   if(!user){
+//     return next(
+//       new AppError('User does not exist', 400)
+//     )
+// }
 
-const isPasswordValid = await user.comparePassword(oldPassword);
+// const isPasswordValid = await user.comparePassword(oldPassword);
 
-if(!isPasswordValid){
-  return next(new AppError('Invalid old password', 400))
-}
-user.password = newPassword;
+// if(!isPasswordValid){
+//   return next(new AppError('Invalid old password', 400))
+// }
+// user.password = newPassword;
 
-await user.save();
+// await user.save();
 
-user.password = undefined;
+// user.password = undefined;
 
-res.status(200).json({
-  success: true,
-  message: 'password changed successfully!',
+// res.status(200).json({
+//   success: true,
+//   message: 'password changed successfully!',
   
-});
+// });
 }
 
 const updateUser = async(req, res, next)=>{
-   const {fullName, role} = req.body;
-   const id = req.user.id;
+//    const {fullName, role} = req.body;
+//    const id = req.user.id;
 
-   const user = await userModel.findById(id);
+//    const user = await userModel.findById(id);
      
 
-   if(!user){
-    return next(new AppError('User does not exist', 400))
-   }
+//    if(!user){
+//     return next(new AppError('User does not exist', 400))
+//    }
     
-    // Update user data
-    user.fullName = fullName;
-    user.role = role;
+//     // Update user data
+//     user.fullName = fullName;
+//     user.role = role;
 
-  if(req.file){
-    await cloudinary.v2.uploader.destroy(user.avatar.public_id);
+//   if(req.file){
+//     await cloudinary.v2.uploader.destroy(user.avatar.public_id);
 
-    try{
-      const result = await cloudinary.v2.uploader.upload(req.file.path, {
-        folder: 'lms',
-        width: 250,
-        height: 250,
-        gravity: 'faces',
-        crop: 'fill'
-      });
-      if(result) {
-        user.avatar.public_id = result.public_id;
-        user.avatar.secure_url = result.secure_url;
+//     try{
+//       const result = await cloudinary.v2.uploader.upload(req.file.path, {
+//         folder: 'lms',
+//         width: 250,
+//         height: 250,
+//         gravity: 'faces',
+//         crop: 'fill'
+//       });
+//       if(result) {
+//         user.avatar.public_id = result.public_id;
+//         user.avatar.secure_url = result.secure_url;
 
-        // Remove file from server
-        fs.rm(`uploads/${req.file.filename}`)
-          await user.save();
-        }
+//         // Remove file from server
+//         fs.rm(`uploads/${req.file.filename}`)
+//           await user.save();
+//         }
         
-   }
-   catch(err){
-    return next(
-      new AppError(e || 'File not uploaded, please try again', 500)
-  )
-   }
-}
-await user.save();
-console.log(user);
-res.status(200).json({
-  success: true,
-  message: 'User details updated successfully!',
-  user
-});
+//    }
+//    catch(err){
+//     return next(
+//       new AppError(e || 'File not uploaded, please try again', 500)
+//   )
+//    }
+// }
+// await user.save();
+// console.log(user);
+// res.status(200).json({
+//   success: true,
+//   message: 'User details updated successfully!',
+//   user
+// });
 } 
 
 const getAllUser = async(req, res, next)=>{
     
-  try{
-    const users = await userModel.find();
+//   try{
+//     const users = await userModel.find();
 
-    if(!users){
-      return next(new AppError("No any user"),400)
-    }
-    console.log(users);
-     res.status(200).json({
-      success: true,
-      message: "sucessfully fetched all users",
-      users
-    })
-  }
-  catch(err){
-     return next(new AppError(err.message, 500))
-  }
+//     if(!users){
+//       return next(new AppError("No any user"),400)
+//     }
+//     console.log(users);
+//      res.status(200).json({
+//       success: true,
+//       message: "sucessfully fetched all users",
+//       users
+//     })
+//   }
+//   catch(err){
+//      return next(new AppError(err.message, 500))
+//   }
   
 }
 module.exports = {register,
