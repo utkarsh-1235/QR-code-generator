@@ -41,7 +41,7 @@ const userSchema = new Schema(
     },
     role:{
       type: 'String',
-      enum: ['USER', 'ADMIN', 'EDUCATOR'],
+      enum: ['USER', 'ADMIN'],
       required: true
     },
     forgotPasswordToken: {
@@ -50,10 +50,23 @@ const userSchema = new Schema(
     forgotPasswordExpiryDate: {
       type: Date,
     },
-    subscription:{
-      id: String,
-      status: String
+    bloodGroup:{
+        type: String,
+        required: true
+    },
+    preMedical:{
+        type: String,
+        required: true
+    },
+    EmergencyContact:{
+        type: Number,
+        required: true
+    },
+    vehicle:{
+
     }
+    
+   
   },
   { timestamps: true }
 );

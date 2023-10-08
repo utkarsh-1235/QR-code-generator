@@ -1,6 +1,8 @@
 // const express = require('express');
 const QRCode = require('qrcode');
-// const fs = require('fs');
+const fs = require('fs');
+const QrModel = require('../Models/QRModel');
+const userModel = require('../Models/userModel');
 
 // const app = express();
 // const port = 3000;
@@ -11,7 +13,7 @@ const QRCode = require('qrcode');
 const generateQr = async (req, res) => {
     const { data, filename } = req.body;
 
-    QRCode.toFile(filename, data, (err) => {
+    await QRCode.toFile(filename, data, (err) => {
         if (err) {
             console.error(err);
             res.status(500).send('Error generating QR code');
@@ -23,17 +25,17 @@ const generateQr = async (req, res) => {
 };
 
 // Endpoint for reading a QR code and extracting data
-app.get('/read/:filename', (req, res) => {
-    const filename = req.params.filename;
+// app.get('/read/:filename', (req, res) => {
+//     const filename = req.params.filename;
 
-    QRCode.toDataURL(filename, (err, url) => {
-        if (err) {
-            console.error(err);
-            res.status(500).send('Error reading QR code');
-        } else {
-            res.status(200).json({ data: url });
-        }
-    });
-});
+//     QRCode.toDataURL(filename, (err, url) => {
+//         if (err) {
+//             console.error(err);
+//             res.status(500).send('Error reading QR code');
+//         } else {
+//             res.status(200).json({ data: url });
+//         }
+//     });
+// });
 
 module.exports = {generateQr}
