@@ -9,12 +9,13 @@ const twilio = require('twilio');
 //const sendEmail = require('../Utils/sendmail.util.js');
 
 
-const cookieOptions = {
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-  httpOnly: true,
-  secure: true
-}
+// const cookieOptions = {
+//   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+//   httpOnly: true,
+//   secure: true
+// }
 
+const Client = new twilio(process.env.ACCOUNT_SID, process.env.AUTH_TOKEN);
 
 /******************************************************
    * @login
@@ -24,16 +25,24 @@ const cookieOptions = {
    * @returns User Object
    ******************************************************/
   
-const login = async (req, res, next) => {
+const sendOtp = async (req, res, next) => {
   
   try {
-    const {phoneNumber } = req.body.phoneNumber;
+    const {phoneNumber } = req.body;
   
     console.log(phoneNumber);
 
     if(!phoneNumber){
        return next(new AppError('Phone number is required.', 400))
     }
+     // Check if the user with the given phone number already exists
+     const existingUser = await userModel.findOne({ phoneNumber });
+
+     if (!existingUser) {
+        // If the user does not exist, create a new user with the phone number
+        const newUser = new userModel({ phoneNumber });
+        await newUser.save();
+     }
 
     Client.verify.services(process.env.VERIFY_SERVICE_SID)
     .verifications
@@ -44,6 +53,7 @@ const login = async (req, res, next) => {
         success:true,
         message:'OTP sent successfully.'
       });
+      
     })
       .catch((err)=>{
         console.log(err);
@@ -60,16 +70,17 @@ const login = async (req, res, next) => {
 const verifyOtp = async(req, res, next)=>{
     const phoneNumber = req.body.phoneNumber;
     const otpCode = req.body.otpCode;
-          
+          console.log(phoneNumber, otpCode);
     if(!phoneNumber || !otpCode){
       return next(new AppError('Phone number and OTP code are required.',400));
     }
+    
 
-    Client.verify.services(VERIFY_SERVICE_SID)
+    Client.verify.v2.services(process.env.VERIFY_SERVICE_SID)
     .verificationChecks
     .create({ to: phoneNumber, code: otpCode})
     .then((verificationCheck) =>{
-       console.log(verification.status);
+       console.log(verificationCheck.status);
       
        if(verificationCheck.status === 'approved'){
         return res.status(200).json({
@@ -107,7 +118,7 @@ const verifyOtp = async(req, res, next)=>{
   };
 
 module.exports = {
-    login,
+    sendOtp,
     logout,
     verifyOtp
 }
