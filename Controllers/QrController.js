@@ -2,42 +2,41 @@
 const QRCode = require('qrcode');
 //onst mongoose = require('mongoose');
 const QRCodeModel = require('../Models/QRModel');
+const AppError = require('../Utils/error.util')
 
 //const app = express();
 
-const generateQr =  async (req, res) => {
+const generateQr =  async (req, res, next) => {
     
-  try {
-    const qrCodes = [];
-    const promises = [];
-
-    for (let i = 0; i < 100; i++) {
-      const data = `QR code ${i}`;
-      const qrCode = await QRCode.toDataURL(data);
-      qrCodes.push(qrCode);
-
-      const qrCodeModel = new QRCodeModel({
-        codeImage: qrCode,
-        associatedData: { id: i },
-      });
-
-      promises.push(qrCodeModel.save());
+    try {
+      for (let i = 1; i <= 100; i++) {
+        const data = `QR Code ${i}`;
+        const qrCodeImage = `qrcodes/qr_code_${i}.png`;
+  
+        // Generate QR code
+        await QRCode.toFile(qrCodeImage, data);
+  
+        // Save QR code data to the database
+        const qrCode = new QRCodeModel({
+          data,
+          qrCodeImage,
+        });
+        await qrCode.save();
+        console.log(`QR Code ${i} saved to the database.`);
+        
+      }
+  
+      //mongoose.disconnect();
+      res.status(200).json({
+        success: true,
+        message: `All QR codes generated and stored successfully.`,
+        
+      })
+      
+    } catch (err) {
+      return (next(new AppError(err.message, 500)));
     }
-
-    await Promise.all(promises);
-
-    res.status(200).json({
-      success: true,
-      message: 'QR codes generated and saved successfully',
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: 'Error generating and saving QR codes',
-    });
   }
-};
 
 // mongoose.connect('mongodb://localhost:27017/qrCodes', {
 //   useNewUrlParser: true,
