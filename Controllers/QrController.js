@@ -1,41 +1,53 @@
-// const express = require('express');
+//const express = require('express');
 const QRCode = require('qrcode');
-const fs = require('fs');
-const QrModel = require('../Models/QRModel');
-const userModel = require('../Models/userModel');
+//onst mongoose = require('mongoose');
+const QRCodeModel = require('../Models/QRModel');
 
-// const app = express();
-// const port = 3000;
+//const app = express();
 
-//app.use(express.json());
+const generateQr =  async (req, res) => {
+    
+  try {
+    const qrCodes = [];
+    const promises = [];
 
-// Endpoint for generating a QR code and saving it to a file
-const generateQr = async (req, res) => {
-    const { data, filename } = req.body;
+    for (let i = 0; i < 100; i++) {
+      const data = `QR code ${i}`;
+      const qrCode = await QRCode.toDataURL(data);
+      qrCodes.push(qrCode);
 
-    await QRCode.toFile(filename, data, (err) => {
-        if (err) {
-            console.error(err);
-            res.status(500).send('Error generating QR code');
-        } else {
-            console.log(`QR code saved to ${filename}`);
-            res.status(200).send('QR code generated and saved successfully');
-        }
+      const qrCodeModel = new QRCodeModel({
+        codeImage: qrCode,
+        associatedData: { id: i },
+      });
+
+      promises.push(qrCodeModel.save());
+    }
+
+    await Promise.all(promises);
+
+    res.status(200).json({
+      success: true,
+      message: 'QR codes generated and saved successfully',
     });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Error generating and saving QR codes',
+    });
+  }
 };
 
-// Endpoint for reading a QR code and extracting data
-// app.get('/read/:filename', (req, res) => {
-//     const filename = req.params.filename;
-
-//     QRCode.toDataURL(filename, (err, url) => {
-//         if (err) {
-//             console.error(err);
-//             res.status(500).send('Error reading QR code');
-//         } else {
-//             res.status(200).json({ data: url });
-//         }
-//     });
+// mongoose.connect('mongodb://localhost:27017/qrCodes', {
+//   useNewUrlParser: true,
+//   useUnifiedTopology: true
+// }).then(() => {
+//   console.log('Connected to database');
+//   app.listen(3000, () => {
+//     console.log('Server started on port 3000');
+//   });
+// }).catch((err) => {
+//   console.error(err);
 // });
-
 module.exports = {generateQr}

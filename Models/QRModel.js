@@ -2,15 +2,15 @@ const mongoose = require('mongoose');
 const { Schema, model } = mongoose;
 
 const QRSchema = new Schema({
-    QrId:{
-        type: String,
-        required: true,
-        trim : true
-    },
-    user:{
-        type: Schema.Types.ObjectId,
-        ref: 'users',
-    }
+   codeImage:{
+      type: String,
+      required: true
+   },
+   associatedData:{
+    type: Object,
+    required: true
+   },
+
 },
   {timestamps: true})
 

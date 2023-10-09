@@ -42,7 +42,7 @@ const userSchema = new Schema(
     role:{
       type: 'String',
       enum: ['USER', 'ADMIN'],
-      required: true
+      //required: true
     },
     forgotPasswordToken: {
       type: String,
@@ -50,21 +50,34 @@ const userSchema = new Schema(
     forgotPasswordExpiryDate: {
       type: Date,
     },
-    bloodGroup:{
-        type: String,
-        required: true
-    },
-    preMedical:{
-        type: String,
-        required: true
-    },
-    EmergencyContact:{
-        type: Number,
-        required: true
-    },
-    vehicle:{
+    // bloodGroup:{
+    //     type: String,
+    //    // required: true
+    // },
+    // preMedical:{
+    //     type: String,
+    //  //   required: true
+    // },
+    // EmergencyContact:{
+    //     contact1:{
+    //         type: Number,
 
-    }
+    //         //required: true
+    //     },
+    //     contact2:{
+    //         type: Number,
+
+    //         //required: true
+    //     }
+       
+    // },
+    // vehicle:{
+    //       type: String,
+    //       vehicleNumber:{
+    //         type: String,
+    //         //required: true
+    //       } 
+    // }
     
    
   },

@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 mongoose.set('strictQuery', false);
 require('dotenv').config()
 
-const MONGODB_URL = process.env.MONGODB_URL||'mongodb://localhost:27017/Learning-Management'
+const MONGODB_URL = process.env.MONGODB_URL||'mongodb://localhost:27017/QR-code-generator'
 const dbConnect = ()=>{
     mongoose
          .connect(MONGODB_URL)
