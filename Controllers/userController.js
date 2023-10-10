@@ -1,3 +1,4 @@
+const QRModel = require('../Models/QRModel');
 const userModel = require('../Models/userModel');
 // const emailValidator = require('email-validator');
 // const bcrypt = require('bcrypt');
@@ -96,7 +97,93 @@ const verifyOtp = async(req, res, next)=>{
       return next(new AppError('Failed to verify OTP.', 500))
     })
 }
-  /******************************************************
+
+
+  
+  const activateUser = async (req, res, next) => {
+    const { objectId, Name, BloodGroup, preMedicalInfo, EmergencyContact, vehicleNumber } = req.body;
+      
+    console.log(objectId, Name, BloodGroup, preMedicalInfo, vehicleNumber, EmergencyContact );
+
+    if (!objectId || !Name || !BloodGroup || !preMedicalInfo || !EmergencyContact) {
+      return next(new AppError('Enter All the fields', 400));
+    }
+  
+    try {
+      // Find the QR code document by ID
+      const qrCode = await QRModel.findById(objectId);
+              console.log(qrCode);
+      if (!qrCode) {
+        return next(new AppError('QR code not found', 404));
+      }
+  
+   // Check if the QR code has already been allotted
+    // if (qrCode.additionalInfo && qrCode.additionalInfo.Name) {
+    //   return next(new AppError('QR code already allotted', 400));
+    // }
+
+    // Update the additionalInfo object with user information
+    qrCode.additionalInfo = {
+      Name,
+      BloodGroup,
+      preMedicalInfo,
+      vehicleNumber,
+      EmergencyContact,
+    };    // Save the updated QR code document
+      await qrCode.save();
+  
+      res.status(200).json({
+        success: true,
+        message: 'User activated successfully.',
+        qrCode
+      });
+    } catch (error) {
+      console.error('Error activating user:', error);
+      return next(new AppError('Failed to activate user', 500));
+    }
+  };
+  const editQr = async (req, res, next) => {
+    const { objectId, Name, BloodGroup, preMedicalInfo, EmergencyContact, vehicleNumber } = req.body;
+  
+    console.log(objectId, Name, BloodGroup, preMedicalInfo, vehicleNumber, EmergencyContact);
+  
+    if (!objectId || !Name || !BloodGroup || !preMedicalInfo || !EmergencyContact || !vehicleNumber) {
+      return next(new AppError('Enter all the required fields', 400));
+    }
+  
+    try {
+      // Find the QR code document by ID
+      const qrCode = await QRModel.findById(objectId);
+      console.log(qrCode);
+  
+      if (!qrCode) {
+        return next(new AppError('QR code not found', 404));
+      }
+  
+      // Update all fields
+      qrCode.additionalInfo = {
+        Name,
+        BloodGroup,
+        preMedicalInfo,
+        vehicleNumber,
+        EmergencyContact,
+      };
+  
+      // Save the updated QR code document
+      await qrCode.save();
+  
+      res.status(200).json({
+        success: true,
+        message: 'User edited successfully.',
+        qrCode
+      });
+    } catch (error) {
+      console.error('Error editing user:', error);
+      return next(new AppError('Failed to edit user', 500));
+    }
+  };
+  
+/******************************************************
    * @LOGOUT
    * @route /api/auth/logout
    * @method GET
@@ -104,21 +191,24 @@ const verifyOtp = async(req, res, next)=>{
    * @returns logout message and cookie without token
    ******************************************************/
   
-  const logout =  (req, res) => {
-    res.cookie('token', null, {
-      secure: true,
-      maxAge: 0,
-      httpOnly: true
-    });
+const logout =  (req, res) => {
+  res.cookie('token', null, {
+    secure: true,
+    maxAge: 0,
+    httpOnly: true
+  });
 
-    res.status(200).json({
-      success: true,
-      message: 'User logged out successfully'
-    })
-  };
+  res.status(200).json({
+    success: true,
+    message: 'User logged out successfully'
+  })
+};
 
 module.exports = {
     sendOtp,
+    verifyOtp,
+    activateUser,
+    editQr,
     logout,
-    verifyOtp
+
 }

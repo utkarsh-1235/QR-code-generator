@@ -3,7 +3,7 @@ const path = require('path')
 const multer = require('multer')
 
 const upload = multer({
-    dest: "uploads/",
+    dest: "qrcodes/",
     limits: { fileSize: 50 * 1024 * 1024},  // 50 mb in size max limit
     storage: multer.diskStorage({
         destination: "uploads/",

@@ -28,7 +28,7 @@ app.use(cookieParser());   // Third-party middleware
  app.use('/api/v1/users',userAuthRoute);
 
  //qr Route
- app.use('api/v1/qr',QrRoute);
+ app.use('/api/v1/qr',QrRoute);
 
 
 
