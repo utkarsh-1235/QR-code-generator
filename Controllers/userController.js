@@ -52,7 +52,8 @@ const sendOtp = async (req, res, next) => {
       console.log(verification.status);
       res.status(200).json({
         success:true,
-        message:'OTP sent successfully.'
+        message:'OTP sent successfully.',
+        phoneNumber
       });
       
     })
@@ -86,7 +87,10 @@ const verifyOtp = async(req, res, next)=>{
        if(verificationCheck.status === 'approved'){
         return res.status(200).json({
            success: true,
-           message: 'Otp verification successful.'
+           message: 'Otp verification successful.',
+           phoneNumber,
+           otpCode,
+           verified: true
         });
        }
        else{
@@ -117,10 +121,10 @@ const verifyOtp = async(req, res, next)=>{
         return next(new AppError('QR code not found', 404));
       }
   
-   // Check if the QR code has already been allotted
-    // if (qrCode.additionalInfo && qrCode.additionalInfo.Name) {
-    //   return next(new AppError('QR code already allotted', 400));
-    // }
+   //Check if the QR code has already been allotted
+    if (qrCode.additionalInfo && qrCode.additionalInfo.Name) {
+      return next(new AppError('QR code already allotted', 400));
+    }
 
     // Update the additionalInfo object with user information
     qrCode.additionalInfo = {
