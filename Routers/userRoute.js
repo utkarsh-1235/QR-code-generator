@@ -12,15 +12,21 @@ const {
        verifyOtp,
        activateUser,
        logout,
-       editQr} = require('../Controllers/userController');
+       editQr,
+       checkQr} = require('../Controllers/userController');
 
 
 
 authRoute.post('/send-otp', sendOtp);
 authRoute.post('/logout', logout);
 authRoute.post('/verify-otp', verifyOtp);
-authRoute.get('/activate-user', activateUser);
-authRoute.get('/edit-qr', editQr)
+
+authRoute.route('/')
+          .post(checkQr,
+                activateUser)
+          .get(checkQr,
+               editQr)
+
 
 
 

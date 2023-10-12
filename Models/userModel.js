@@ -16,7 +16,7 @@ const userSchema = new Schema(
     otpCode:{
       type: String,
 //      isrequired:[true,"otp is required"],
-      length:6,
+     // length:6,
   //    required: true
     },
     verified:{

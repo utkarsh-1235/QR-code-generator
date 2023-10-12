@@ -2,7 +2,8 @@ const express = require('express');
 const QrRoute = express.Router();
 
 
-const {generateQr} = require('../Controllers/QrController');
+const {generateQr, scanQr} = require('../Controllers/QrController');
 
-QrRoute.get('/generate',generateQr);
+QrRoute.post('/generate',generateQr);
+QrRoute.post('/api/qr/:qrData',scanQr);
 module.exports = QrRoute;

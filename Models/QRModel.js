@@ -10,8 +10,20 @@ const QRSchema = new Schema({
    //  type: Object,
    //  required: true
    // },
+  //  user: {
+  //   type: mongoose.Schema.Types.ObjectId,
+  //   ref: 'user',
+  //   required: true,
+  // },
    data: String,
-   qrCodeImage: String,
+   qrCodeImage: {
+     type: String,
+     required: true
+   },
+   QrId:{
+     type: String,
+     required: true
+   },
    additionalInfo:{
       Name:{
         type: String
