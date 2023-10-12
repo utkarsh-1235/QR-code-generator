@@ -27,47 +27,104 @@ const Client = new twilio(process.env.ACCOUNT_SID, process.env.AUTH_TOKEN);
    * @returns User Object
    ******************************************************/
   
-const sendOtp = async (req, res, next) => {
+// const sendOtp = async (req, res, next) => {
   
-  try {
-    const {phoneNumber } = req.body;
+//   try {
+//     const {phoneNumber } = req.body;
   
-    console.log(phoneNumber);
+//     console.log(phoneNumber);
 
-    if(!phoneNumber){
-       return next(new AppError('Phone number is required.', 400))
-    }
-     // Check if the user with the given phone number already exists
-     const existingUser = await userModel.findOne({ phoneNumber });
-
-     if (!existingUser) {
-        // If the user does not exist, create a new user with the phone number
-        const newUser = new userModel({ phoneNumber });
-        await newUser.save();
-     }
-
-    Client.verify.services(process.env.VERIFY_SERVICE_SID)
-    .verifications
-    .create({to: phoneNumber, channel: 'sms'})
-    .then((verification)=>{
-      console.log(verification.status);
-      res.status(200).json({
-        success:true,
-        message:'OTP sent successfully.',
-        phoneNumber
-      });
+//     if(!phoneNumber){
+//        return next(new AppError('Phone number is required.', 400))
+//     }
       
-    })
-      .catch((err)=>{
-        console.log(err);
-        return next(new AppError(err, 500));
-      })
+//     // Check if the user with the given phone number already exists
+//     const userExist = await userModel.findOne({ phoneNumber });
+
+//     if (userExist) {
+//       // Handle the case where the user already exists (e.g., return an error)
+//       return next(new AppError('User with this phone number already exists.',400))
+//     }
+//      // Check if the user with the given phone number already exists
+//      const existingUser = await userModel.findOne({ phoneNumber });
+
+//      if (!existingUser) {
+//         // If the user does not exist, create a new user with the phone number
+//         const newUser = new userModel({ phoneNumber });
+//         await newUser.save();
+//      }
+
+//     Client.verify.services(process.env.VERIFY_SERVICE_SID)
+//     .verifications
+//     .create({to: phoneNumber, channel: 'sms'})
+//     .then((verification)=>{
+//       console.log(verification.status);
+//       res.status(200).json({
+//         success:true,
+//         message:'OTP sent successfully.',
+//         phoneNumber
+//       });
+      
+//     })
+//       .catch((err)=>{
+//         console.log(err);
+//         return next(new AppError(err, 500));
+//       })
     
     
+//   } catch (err) {
+//     return next(new AppError(err.message, 500));
+//   }
+// };
+
+
+const sendOtp = async (req, res, next) => {
+  try {
+    const { phoneNumber } = req.body;
+
+    if (!phoneNumber) {
+      return next(new AppError('Phone number is required.', 400));
+    }
+
+    // Check if the user with the given phone number already exists
+    const existingUser = await userModel.findOne({ phoneNumber });
+
+    if (existingUser) {
+      userModel.userId = existingUser._id;
+      await userModel.save();
+      return res.status(200).json({
+        success: true,
+        message: 'User found and updated.',
+        phoneNumber,
+      });
+    } else {
+      // If the user does not exist, create a new user with the phone number
+      const newUser = new userModel({ phoneNumber });
+      await newUser.save();
+
+      // Continue with sending the OTP
+      Client.verify.services(process.env.VERIFY_SERVICE_SID)
+        .verifications
+        .create({ to: phoneNumber, channel: 'sms' })
+        .then((verification) => {
+          console.log(verification.status);
+          res.status(200).json({
+            success: true,
+            message: 'OTP sent successfully.',
+            phoneNumber,
+          });
+        })
+        .catch((err) => {
+          console.error(err);
+          return next(new AppError('Failed to send OTP.', 500));
+        });
+    }
   } catch (err) {
-    return next(new AppError(err.message, 500));
+    console.error(err);
+    return next(new AppError('Failed to send OTP.', 500));
   }
 };
+
 
 
 const verifyOtp = async(req, res, next)=>{
@@ -105,32 +162,34 @@ const verifyOtp = async(req, res, next)=>{
 
 
   
+
 const checkQr = async (req, res, next) => {
   const { QrId } = req.body;
 
-  console.log('QrId',QrId);
+  console.log('QrId', QrId);
 
   if (!QrId) {
     return next(new AppError('QR Id Required', 400));
   }
 
-    if(QRModel.QrId == QrId){
-      return next(new AppError('Invalid QR Id',400))
-    }
-    
   try {
-    const Qr = await QRModel.findById(QrId);
+    // Check if a QR document with the provided QrId exists
+    const existingQR = await QRModel.findOne({ QrId: QrId });
 
-    console.log(Qr);
-    if (!Qr) {
+    if (!existingQR) {
       return next(new AppError('QR not exist of given Id', 404));
     }
 
-    if (Qr.additionalInfo.Name && Qr.additionalInfo.BloodGroup) {
+    if (existingQR.additionalInfo.Name && existingQR.additionalInfo.BloodGroup) {
       return next(new AppError('Sorry QR already allotted', 400));
     }
 
-    await Qr.save();
+    // Handle the remaining logic as needed
+
+    // Update the QR model or perform other operations
+
+    await existingQR.save();
+
     return res.status(200).json({
       success: true,
       message: 'Yes, you can fill your details',
@@ -141,23 +200,23 @@ const checkQr = async (req, res, next) => {
 };
 
 
- const activateUser  = async (req, res, next) => {
-  const {QrId,Name, BloodGroup, preMedicalInfo, EmergencyContact, vehicleNumber } = req.body;
 
-  console.log( Name, BloodGroup, preMedicalInfo, vehicleNumber, EmergencyContact);
+const activateUser = async (req, res, next) => {
+  const { QrId, Name, BloodGroup, preMedicalInfo, EmergencyContact, vehicleNumber } = req.body;
+
+  console.log(Name, BloodGroup, preMedicalInfo, vehicleNumber, EmergencyContact);
 
   if (!QrId || !Name || !BloodGroup || !preMedicalInfo || !EmergencyContact || !vehicleNumber) {
     return next(new AppError('Enter all the required fields', 400));
   }
 
   try {
-    // Find the QR code document by ID
-     const qrCode = await QRModel.findById(QrId);
-     console.log(qrCode);
+    // Find the QR code document by QrId (assuming it's unique)
+    const qrCode = await QRModel.findOne({ QrId });
 
-    // if (!qrCode) {
-    //   return next(new AppError('QR code not found', 404));
-    // }
+    if (!qrCode) {
+      return next(new AppError('QR code not found', 404));
+    }
 
     // Update all fields
     qrCode.additionalInfo = {
@@ -174,13 +233,14 @@ const checkQr = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: 'User activated successfully.',
-      qrCode
+      qrCode,
     });
   } catch (error) {
     console.error('Error in activating user:', error);
     return next(new AppError('Failed to activate user', 500));
   }
 };
+
 
   const editQr = async (req, res, next) => {
     const {QrId, Name, BloodGroup, preMedicalInfo, EmergencyContact, vehicleNumber } = req.body;
@@ -193,7 +253,7 @@ const checkQr = async (req, res, next) => {
   
     try {
       // Find the QR code document by ID
-      const qrCode = await QRModel.findById(QrId);
+      const qrCode = await QRModel.findOne(QrId);
       console.log(qrCode);
   
       // if (!qrCode) {

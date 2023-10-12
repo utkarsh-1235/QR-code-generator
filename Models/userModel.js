@@ -7,96 +7,16 @@ require('dotenv').config();
 
 const userSchema = new Schema(
   {
-    phoneNumber:{
+    phoneNumber: {
       type: String,
-      isrequired:[true,"Mobile Number is required"],
-      length: 10,
-      required: true
-    },
-    otpCode:{
-      type: String,
-//      isrequired:[true,"otp is required"],
-     // length:6,
-  //    required: true
-    },
-    verified:{
-      type: Boolean,
-      default: false
-    }
-    // name: {
-    //   type: String,
-    //   require: [true, 'user name is Required'],
-    //   minLength: [5, 'Name must be at least 5 characters'],
-    //   maxLength: [50, 'Name must be less than 50 characters'],
-    //   lowercase: true,
-    //   trim: true,
-    // },
-    // email: {
-    //   type: String,
-    //   required: [true, 'user email is required'],
-    //   unique: true,
-    //   lowercase: true,
-    //   unique: [true, 'already registered'],
-    //   match: [/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
-    //   'Please fill in a valid email address',
-    // ]
-    // },
-    // password: {
-    //   type: String,
-    //   required: [true, 'password is required'],
-    //   minLength:[8, 'password must be at least 8 characters'],
-    //   select: false,
-    // },
-    // avatar: {
-    //   public_id:{
-    //     type: 'String'
-    //   },
-    //   secure_url: {
-    //     type: 'String'
-    //   }
-    // },
-    // role:{
-    //   type: 'String',
-    //   enum: ['USER', 'ADMIN'],
-    //   //required: true
-    // },
-    // forgotPasswordToken: {
-    //   type: String,
-    // },
-    // forgotPasswordExpiryDate: {
-    //   type: Date,
-    // },
-    // bloodGroup:{
-    //     type: String,
-    //    // required: true
-    // },
-    // preMedical:{
-    //     type: String,
-    //  //   required: true
-    // },
-    // EmergencyContact:{
-    //     contact1:{
-    //         type: Number,
-
-    //         //required: true
-    //     },
-    //     contact2:{
-    //         type: Number,
-
-    //         //required: true
-    //     }
-       
-    // },
-    // vehicle:{
-    //       type: String,
-    //       vehicleNumber:{
-    //         type: String,
-    //         //required: true
-    //       } 
-    // }
-    
-   
+      required: true,
   },
+  
+  verified: {
+      type: Boolean,
+      default: false,
+   
+  }},
   { timestamps: true }
 );
 
