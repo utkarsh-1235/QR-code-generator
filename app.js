@@ -17,7 +17,7 @@ app.use(bodyParser.json());
 
 app.use(express.urlencoded({ extended: true }));
 
-app.use(cors({ origin: [process.env.FRONTEND_URL], credentials: true })); //Third-party middleware
+app.use(cors({ origin: [process.env.CLIENT_URL], credentials: true })); //Third-party middleware
 
 app.use(cookieParser());   // Third-party middleware
 
