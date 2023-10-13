@@ -24,6 +24,10 @@ const QRSchema = new Schema({
      type: String,
      required: true
    },
+   user: {
+    type: Schema.Types.ObjectId,
+    ref: 'user'
+},
    additionalInfo:{
       Name:{
         type: String

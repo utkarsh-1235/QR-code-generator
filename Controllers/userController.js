@@ -1,23 +1,10 @@
 const QRModel = require('../Models/QRModel');
 const userModel = require('../Models/userModel');
-// const emailValidator = require('email-validator');
-// const bcrypt = require('bcrypt');
-// const crypto = require('crypto');
-// const cloudinary = require('cloudinary');
 const AppError = require('../Utils/error.util');
 const twilio = require('twilio');
 const mongoose = require('mongoose');
-//const fs = require('fs/promises');
-//const sendEmail = require('../Utils/sendmail.util.js');
+const PhoneNumber = require('libphonenumber-js');
 
-
-// const cookieOptions = {
-//   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-//   httpOnly: true,
-//   secure: true
-// }
-
-const Client = new twilio(process.env.ACCOUNT_SID, process.env.AUTH_TOKEN);
 
 /******************************************************
    * @login
@@ -27,83 +14,31 @@ const Client = new twilio(process.env.ACCOUNT_SID, process.env.AUTH_TOKEN);
    * @returns User Object
    ******************************************************/
   
-// const sendOtp = async (req, res, next) => {
-  
-//   try {
-//     const {phoneNumber } = req.body;
-  
-//     console.log(phoneNumber);
-
-//     if(!phoneNumber){
-//        return next(new AppError('Phone number is required.', 400))
-//     }
-      
-//     // Check if the user with the given phone number already exists
-//     const userExist = await userModel.findOne({ phoneNumber });
-
-//     if (userExist) {
-//       // Handle the case where the user already exists (e.g., return an error)
-//       return next(new AppError('User with this phone number already exists.',400))
-//     }
-//      // Check if the user with the given phone number already exists
-//      const existingUser = await userModel.findOne({ phoneNumber });
-
-//      if (!existingUser) {
-//         // If the user does not exist, create a new user with the phone number
-//         const newUser = new userModel({ phoneNumber });
-//         await newUser.save();
-//      }
-
-//     Client.verify.services(process.env.VERIFY_SERVICE_SID)
-//     .verifications
-//     .create({to: phoneNumber, channel: 'sms'})
-//     .then((verification)=>{
-//       console.log(verification.status);
-//       res.status(200).json({
-//         success:true,
-//         message:'OTP sent successfully.',
-//         phoneNumber
-//       });
-      
-//     })
-//       .catch((err)=>{
-//         console.log(err);
-//         return next(new AppError(err, 500));
-//       })
-    
-    
-//   } catch (err) {
-//     return next(new AppError(err.message, 500));
-//   }
-// };
-
+const Client = new twilio(process.env.ACCOUNT_SID, process.env.AUTH_TOKEN); // Twilio client setup
 
 const sendOtp = async (req, res, next) => {
   try {
-    const { phoneNumber } = req.body;
+    const { phoneNumber, role } = req.body;
+    console.log(phoneNumber);
 
     if (!phoneNumber) {
-      return next(new AppError('Phone number is required.', 400));
+      return next(new AppError('Phone Number required.', 400));
     }
 
     // Check if the user with the given phone number already exists
     const existingUser = await userModel.findOne({ phoneNumber });
+    console.log("ExistingUser", existingUser);
 
-    if (existingUser) {
-      userModel.userId = existingUser._id;
-      await userModel.save();
-      return res.status(200).json({
-        success: true,
-        message: 'User found and updated.',
-        phoneNumber,
-      });
-    } else {
+    if (!existingUser) {
       // If the user does not exist, create a new user with the phone number
-      const newUser = new userModel({ phoneNumber });
+      const newUser = new userModel({
+        phoneNumber, role
+      });
+
       await newUser.save();
 
       // Continue with sending the OTP
-      Client.verify.services(process.env.VERIFY_SERVICE_SID)
+      Client.verify.v2.services(process.env.VERIFY_SERVICE_SID)
         .verifications
         .create({ to: phoneNumber, channel: 'sms' })
         .then((verification) => {
@@ -111,13 +46,39 @@ const sendOtp = async (req, res, next) => {
           res.status(200).json({
             success: true,
             message: 'OTP sent successfully.',
-            phoneNumber,
+            newUser
           });
         })
         .catch((err) => {
           console.error(err);
           return next(new AppError('Failed to send OTP.', 500));
         });
+    } else if (!existingUser.verified) {
+      // Handle the case where the user exists but is not verified
+      // You might choose to resend the OTP or return an error
+      
+      Client.verify.v2.services(process.env.VERIFY_SERVICE_SID)
+    .verifications
+    .create({ to: phoneNumber, channel: 'sms' })
+    .then((verification) => {
+      console.log(verification.status);
+      res.status(200).json({
+        success: true,
+        message: 'OTP resent successfully.',
+        phoneNumber
+      });
+    })
+    .catch((err) => {
+      console.error(err);
+      return next(new AppError('Failed to resend OTP.', 500));
+    });
+    } else {
+      // The user is already verified, return an appropriate response
+      res.status(200).json({
+        success: true,
+        message: 'User is already verified.',
+        phoneNumber
+      });
     }
   } catch (err) {
     console.error(err);
@@ -127,78 +88,43 @@ const sendOtp = async (req, res, next) => {
 
 
 
-const verifyOtp = async(req, res, next)=>{
-    const phoneNumber = req.body.phoneNumber;
-    const otpCode = req.body.otpCode;
-          console.log(phoneNumber, otpCode);
-    if(!phoneNumber || !otpCode){
-      return next(new AppError('Phone number and OTP code are required.',400));
-    }
-    
+ 
 
-    Client.verify.v2.services(process.env.VERIFY_SERVICE_SID)
+const verifyOtp = async (req, res, next) => {
+  const phoneNumber = req.body.phoneNumber;
+  const otpCode = req.body.otpCode;
+
+  if (!phoneNumber || !otpCode) {
+    return next(new AppError('Phone number and OTP code are required.', 400));
+  }
+
+  Client.verify.v2.services(process.env.VERIFY_SERVICE_SID)
     .verificationChecks
-    .create({ to: phoneNumber, code: otpCode})
-    .then((verificationCheck) =>{
-       console.log(verificationCheck.status);
-      
-       if(verificationCheck.status === 'approved'){
+    .create({ to: phoneNumber, code: otpCode })
+    .then(async (verificationCheck) => {
+      if (verificationCheck.status === 'approved') {
+        // Update the user's verified status in the database
+        const user = await userModel.findOne({ phoneNumber });
+          if(user){
+            user.verified = true;
+            await user.save();
+          }
+        
         return res.status(200).json({
-           success: true,
-           message: 'Otp verification successful.',
-           phoneNumber,
-           otpCode,
-           verified: true
+          success: true,
+          message: 'OTP verification successful.',
+          phoneNumber,
+          otpCode,
+          verified: true,
         });
-       }
-       else{
-        return next(new AppError('Incorrect OTP. Please try again.',401));
-       }
+      } else {
+        return next(new AppError('Incorrect OTP. Please try again.', 401));
+      }
     })
-    .catch((err)=>{
-      return next(new AppError('Failed to verify OTP.', 500))
-    })
-}
-
-
-  
-
-const checkQr = async (req, res, next) => {
-  const { QrId } = req.body;
-
-  console.log('QrId', QrId);
-
-  if (!QrId) {
-    return next(new AppError('QR Id Required', 400));
-  }
-
-  try {
-    // Check if a QR document with the provided QrId exists
-    const existingQR = await QRModel.findOne({ QrId: QrId });
-
-    if (!existingQR) {
-      return next(new AppError('QR not exist of given Id', 404));
-    }
-
-    if (existingQR.additionalInfo.Name && existingQR.additionalInfo.BloodGroup) {
-      return next(new AppError('Sorry QR already allotted', 400));
-    }
-
-    // Handle the remaining logic as needed
-
-    // Update the QR model or perform other operations
-
-    await existingQR.save();
-
-    return res.status(200).json({
-      success: true,
-      message: 'Yes, you can fill your details',
+    .catch((err) => {
+      return next(new AppError('Failed to verify OTP.', 500));
     });
-  } catch (err) {
-    return next(new AppError(err.message, 500));
-  }
 };
-
 
 
 const activateUser = async (req, res, next) => {
@@ -309,7 +235,6 @@ module.exports = {
     verifyOtp,
     activateUser,
     editQr,
-    logout,
-    checkQr
+    logout
 
 }
