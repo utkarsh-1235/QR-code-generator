@@ -139,6 +139,52 @@ const activateUser = async (req, res, next) => {
   try {
     // Find the QR code document by QrId (assuming it's unique)
     const qrCode = await QRModel.findOne({ QrId });
+         
+    console.log(qrCode);
+
+    if (!qrCode) {
+      return next(new AppError('QR code not found', 404));
+    }
+
+   if (qrCode.additionalInfo && qrCode.additionalInfo.Name && qrCode.additionalInfo.BloodGroup) {
+  return next(new AppError('QR code has already been allotted', 400));
+}
+
+    
+ //   const user = req.user; // Assuming you have the user object in the request
+    qrCode.additionalInfo = {
+      Name,
+      BloodGroup,
+      preMedicalInfo,
+      vehicleNumber,
+      EmergencyContact,
+    };
+;
+    // Save the updated QR code document
+    await qrCode.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'User activated successfully.',
+      qrCode,
+    });
+  } catch (error) {
+    console.error('Error in activating user:', error);
+    return next(new AppError('Failed to activate user', 500));
+  }
+};
+
+
+const editQr = async (req, res, next) => {
+  const { QrId, Name, BloodGroup, preMedicalInfo, EmergencyContact, vehicleNumber } = req.body;
+
+  if (!QrId && !Name && !BloodGroup && !preMedicalInfo && !EmergencyContact && !vehicleNumber) {
+    return next(new AppError('Enter all the required fields', 400));
+  }
+
+  try {
+    // Find the QR code document by ID
+    const qrCode = await QRModel.findOne({ QrId: QrId });
 
     if (!qrCode) {
       return next(new AppError('QR code not found', 404));
@@ -158,56 +204,15 @@ const activateUser = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: 'User activated successfully.',
+      message: 'User edited successfully.',
       qrCode,
     });
   } catch (error) {
-    console.error('Error in activating user:', error);
-    return next(new AppError('Failed to activate user', 500));
+    console.error('Error editing user:', error);
+    return next(new AppError('Failed to edit user', 500));
   }
 };
 
-
-  const editQr = async (req, res, next) => {
-    const {QrId, Name, BloodGroup, preMedicalInfo, EmergencyContact, vehicleNumber } = req.body;
-  
-    console.log(QrId,  Name, BloodGroup, preMedicalInfo, vehicleNumber, EmergencyContact);
-  
-    if (!QrId || !Name || !BloodGroup || !preMedicalInfo || !EmergencyContact || !vehicleNumber) {
-      return next(new AppError('Enter all the required fields', 400));
-    }
-  
-    try {
-      // Find the QR code document by ID
-      const qrCode = await QRModel.findOne(QrId);
-      console.log(qrCode);
-  
-      // if (!qrCode) {
-      //   return next(new AppError('QR code not found', 404));
-      // }
-  
-      // Update all fields
-      qrCode.additionalInfo = {
-        Name,
-        BloodGroup,
-        preMedicalInfo,
-        vehicleNumber,
-        EmergencyContact,
-      };
-  
-      // Save the updated QR code document
-      await qrCode.save();
-  
-      res.status(200).json({
-        success: true,
-        message: 'User edited successfully.',
-        qrCode
-      });
-    } catch (error) {
-      console.error('Error editing user:', error);
-      return next(new AppError('Failed to edit user', 500));
-    }
-  };
   
 /******************************************************
    * @LOGOUT

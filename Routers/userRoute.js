@@ -22,9 +22,9 @@ authRoute.post('/logout', logout);
 authRoute.post('/verify-otp', verifyOtp);
 
 authRoute.route('/')
-          .post(checkQr,
+          .post(//checkQr,
                 activateUser)
-          .get(checkQr,
+          .get(//checkQr,
                editQr)
 
 

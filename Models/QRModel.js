@@ -24,10 +24,6 @@ const QRSchema = new Schema({
      type: String,
      required: true
    },
-   user: {
-    type: Schema.Types.ObjectId,
-    ref: 'user'
-},
    additionalInfo:{
       Name:{
         type: String
@@ -35,6 +31,10 @@ const QRSchema = new Schema({
       BloodGroup:{
         type: String
       },
+      user: {
+        type: Schema.Types.ObjectId,
+        ref: 'user'
+    },    
       preMedicalInfo:{
         type: String
       },
