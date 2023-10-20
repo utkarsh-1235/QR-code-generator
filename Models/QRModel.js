@@ -31,6 +31,9 @@ const QRSchema = new Schema({
       BloodGroup:{
         type: String
       },
+      age:{
+        type: Number
+      },
       user: {
         type: Schema.Types.ObjectId,
         ref: 'user'
@@ -46,12 +49,18 @@ const QRSchema = new Schema({
           Name:{
             type: String
           },
+          relation:{
+            type: String
+          },
           phoneNumber:{
             type: String
           }
         }, 
         Contact2: {
           Name:{
+            type: String
+          },
+          relation:{
             type: String
           },
           phoneNumber:{
