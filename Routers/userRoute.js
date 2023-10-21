@@ -21,11 +21,8 @@ authRoute.post('/send-otp', sendOtp);
 authRoute.post('/logout', logout);
 authRoute.post('/verify-otp', verifyOtp);
 
-authRoute.route('/activate/:qrId')
-          .post(//checkQr,
-                activateUser)
-          .patch(//checkQr,
-               editQr)
+authRoute.post('/activate/:qrId', activateUser)
+         
 
 
 

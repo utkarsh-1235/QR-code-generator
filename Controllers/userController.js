@@ -18,7 +18,7 @@ const Client = new twilio(process.env.ACCOUNT_SID, process.env.AUTH_TOKEN); // T
 
 const sendOtp = async (req, res, next) => {
   try {
-    const { phoneNumber, role } = req.body;
+    const { phoneNumber} = req.body;
     console.log(phoneNumber);
 
     if (!phoneNumber) {
@@ -32,7 +32,7 @@ const sendOtp = async (req, res, next) => {
     if (!existingUser) {
       // If the user does not exist, create a new user with the phone number
       const newUser = new userModel({
-        phoneNumber, role
+        phoneNumber
       });
 
       await newUser.save();
@@ -128,11 +128,13 @@ const verifyOtp = async (req, res, next) => {
 
 
 const activateUser = async (req, res, next) => {
-  const { QrId, Name, BloodGroup, preMedicalInfo, EmergencyContact, vehicleNumber } = req.body;
+  
+  const QrId = req.params.qrId;
+  const {Name, age, BloodGroup, preMedicalInfo, EmergencyContact } = req.body;
 
-  console.log(Name, BloodGroup, preMedicalInfo, vehicleNumber, EmergencyContact);
+  console.log(Name, age, BloodGroup, preMedicalInfo, EmergencyContact);
 
-  if (!QrId || !Name || !BloodGroup || !preMedicalInfo || !EmergencyContact || !vehicleNumber) {
+  if (!QrId || !Name || !age || !BloodGroup || !preMedicalInfo || !EmergencyContact ) {
     return next(new AppError('Enter all the required fields', 400));
   }
 
@@ -154,9 +156,10 @@ const activateUser = async (req, res, next) => {
  //   const user = req.user; // Assuming you have the user object in the request
     qrCode.additionalInfo = {
       Name,
+      age,
       BloodGroup,
       preMedicalInfo,
-      vehicleNumber,
+      //vehicleNumber,
       EmergencyContact,
     };
 ;
@@ -172,11 +175,12 @@ const activateUser = async (req, res, next) => {
     console.error('Error in activating user:', error);
     return next(new AppError('Failed to activate user', 500));
   }
-};
+}
 
 
 const editQr = async (req, res, next) => {
-  const { QrId, Name, BloodGroup, preMedicalInfo, EmergencyContact, vehicleNumber } = req.body;
+  const QrId = req.params.qrId;
+  const {Name, BloodGroup, preMedicalInfo, EmergencyContact, vehicleNumber } = req.body;
 
   if (!QrId && !Name && !BloodGroup && !preMedicalInfo && !EmergencyContact && !vehicleNumber) {
     return next(new AppError('Enter all the required fields', 400));

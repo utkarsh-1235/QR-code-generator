@@ -14,10 +14,10 @@ const generateQr = async (req, res, next) => {
       return next(new AppError('Phone Number is required', 400));
     }
     
-    const permission = await userModel.findOne({phoneNumber});
-    if (!permission || (permission && permission.role !== "Admin")) {
-      return next(new AppError("Unauthorized access", 401)); // Changed status code to 401 for unauthorized access
-    }
+    // const permission = await userModel.findOne({phoneNumber});
+    // if (!permission || (permission && permission.role !== "Admin")) {
+    //   return next(new AppError("Unauthorized access", 401)); // Changed status code to 401 for unauthorized access
+    // }
     for (let i = 1; i <= 100; i++) {
       const uniqueID = shortid.generate(); // Generate a short unique object ID
 
