@@ -12,6 +12,10 @@ const userSchema = new Schema({
     required: true,
     unique: true
   },
+  countryCode:{
+    type: String,
+    required: true
+  },
   verified:{
     type: Boolean,
     default: false

@@ -67,6 +67,36 @@ const generateQr = async (req, res, next) => {
   }
 };
 
+const checkAlloted = async(req, res, next) => {
+  try{
+    const qrId = req.body.userID;
+console.log(qrId);
+  // Search for the user with the provided ID in the 'users' array
+  const user = await QRModel.findOne({QrId:qrId});
+  if (user) {
+    console.log(user.additionalInfo);
+    
+    if(user.additionalInfo.name && user.additionalInfo.age){
+      return res.status(200).json({
+        success: true,
+        message: " Sorry user already allotted",
+        user
+      })
+      }
+      else if(!user.additionalInfo){
+        return res.status(401).json({
+          success: false,
+          message: "Yes you can fill the detail"
+        })
+      }
+    
+  } 
+}
+  catch(err){
+     next(new AppError(err.message, 500))
+  }
+}
+
 
 const scanQr = async (req, res) => {
   try {
@@ -87,4 +117,5 @@ const scanQr = async (req, res) => {
 };
 
 module.exports = { generateQr,
-                   scanQr };
+                   scanQr,
+                   checkAlloted };
