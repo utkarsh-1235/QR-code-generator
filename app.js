@@ -75,7 +75,7 @@ const formattedPhoneNumber = `+${normalizedCountryCode}${phoneNumber}`;
       // Continue with sending the OTP
       Client.verify.v2.services(process.env.VERIFY_SERVICE_SID)
         .verifications
-        .create({ to: formattedPhoneNumber, channel: 'sms' })
+        .create({ to: formattedPhoneNumber, channel: 'sms', validity_period: 600 })
         .then((verification) => {
           console.log(verification.status);
           res.status(200).json({
@@ -130,7 +130,7 @@ const formattedPhoneNumber = `+${normalizedCountryCode}${phoneNumber}`;
       // The user is not verified, send a new OTP
       Client.verify.v2.services(process.env.VERIFY_SERVICE_SID)
         .verifications
-        .create({ to: formattedPhoneNumber, channel: 'sms' })
+        .create({ to: formattedPhoneNumber, channel: 'sms',validity_period: 600 })
         .then((verification) => {
           console.log(verification.status);
           res.status(200).json({
