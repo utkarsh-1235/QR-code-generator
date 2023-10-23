@@ -20,6 +20,10 @@ const QRSchema = new Schema({
      type: String,
      required: true
    },
+   QrUrl:{
+     type: String,
+     required: true
+   },
    QrId:{
      type: String,
      required: true
