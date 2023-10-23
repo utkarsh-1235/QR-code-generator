@@ -1,5 +1,5 @@
 const QRCode = require('qrcode');
-const QRCodeModel = require('../Models/QRModel');
+const QRModel = require('../Models/QRModel');
 const AppError = require('../Utils/error.util');
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
@@ -9,22 +9,43 @@ const userModel = require('../Models/userModel');
 
 const generateQr = async (req, res, next) => {
   try {
-    const { phoneNumber } = req.body;
-    if (!phoneNumber) {
-      return next(new AppError('Phone Number is required', 400));
+    const {countryCode, phoneNumber } = req.body;
+    
+    if (!phoneNumber || !countryCode) {
+      return next(new AppError('Phone Number and country code are required', 400));
     }
     
-    // const permission = await userModel.findOne({phoneNumber});
-    // if (!permission || (permission && permission.role !== "Admin")) {
-    //   return next(new AppError("Unauthorized access", 401)); // Changed status code to 401 for unauthorized access
-    // }
+    const normalizedCountryCode = countryCode.replace('+', '');
+
+// Ensure the country code is in the correct format
+if (!/^\d+$/.test(normalizedCountryCode)) {
+  return next(new AppError('Invalid country code.', 400));
+}
+
+// Format the phone number to E.164 format
+const formattedPhoneNumber = `+${normalizedCountryCode}${phoneNumber}`;
+     console.log(formattedPhoneNumber)   ;
+
+    const permission = await userModel.findOne({phoneNumber: formattedPhoneNumber});
+    console.log(permission);
+    if (!permission ) {
+      return next(new AppError("Unauthorized access", 401)); // Changed status code to 401 for unauthorized access
+    }
     for (let i = 1; i <= 100; i++) {
       const uniqueID = shortid.generate(); // Generate a short unique object ID
+      const qrCodeUrl = `http://localhost:4000/api/v1/qr/scan/${uniqueID}`;
+      const options = {
+        color: {
+          dark: '#000000ff',
+          light: '#ffffffff',
+        },
+      };
+      
 
       // Generate QR code
       const data = `QR Code ${i}`;
       const qrCodeImage = `qrcodes/qr_code_${i}.png`;
-      await QRCode.toFile(qrCodeImage, data);
+       await QRCode.toFile(qrCodeImage,qrCodeUrl, options);
 
       // Load the QR code image using Jimp
       const qrCodeJimp = await Jimp.read(qrCodeImage);
@@ -44,10 +65,11 @@ const generateQr = async (req, res, next) => {
       });
 
       // Save QR code data and Cloudinary URL to the database
-      const qrCode = new QRCodeModel({
+      const qrCode = new QRModel({
         data,
         qrCodeImage: cloudinaryResponse.secure_url, // Store the Cloudinary URL
         QrId: uniqueID, // Store the short unique object ID
+        QrUrl:qrCodeUrl
       });
       await qrCode.save();
 
@@ -55,7 +77,7 @@ const generateQr = async (req, res, next) => {
       fs.unlinkSync(qrCodeImage);
       fs.unlinkSync(qrCodeImageWithID);
 
-      console.log(`QR Code ${i} with short unique object ID ${uniqueID} saved to the database and uploaded to Cloudinary.`);
+      console.log(`QR Code ${i} with short unique object ID ${uniqueID} and associated url ${qrCodeUrl} saved to the database and uploaded to Cloudinary.`);
     }
 
     res.status(200).json({
@@ -63,59 +85,37 @@ const generateQr = async (req, res, next) => {
       message: 'All QR codes generated, uploaded, and removed from the server successfully.',
     });
   } catch (err) {
+    console.log(err)
     return next(new AppError(err.message, 500));
   }
 };
 
-const checkAlloted = async(req, res, next) => {
-  try{
-    const qrId = req.body.userID;
-console.log(qrId);
-  // Search for the user with the provided ID in the 'users' array
-  const user = await QRModel.findOne({QrId:qrId});
-  if (user) {
-    console.log(user.additionalInfo);
-    
-    if(user.additionalInfo.name && user.additionalInfo.age){
-      return res.status(200).json({
-        success: true,
-        message: " Sorry user already allotted",
-        user
-      })
-      }
-      else if(!user.additionalInfo){
-        return res.status(401).json({
-          success: false,
-          message: "Yes you can fill the detail"
-        })
-      }
-    
-  } 
-}
-  catch(err){
-     next(new AppError(err.message, 500))
-  }
-}
 
-
-const scanQr = async (req, res) => {
+ const scanQr = async (req, res, next) => {
   try {
-      const qrData = req.params.qrData; // Extract QR code data or identifier from the request
+    const qrId = req.params.qrId;
+            console.log(qrId);
+    // Find the QR code in the database
+    const qrCode = await QRModel.findOne({ QrId: qrId });
+        console.log(qrCode);
+    if (!qrCode) {
+      return next(new AppError('QR Not found',404));
+    }
 
-      // Query the database to retrieve QR code information based on qrData
-      const qrCodeInfo = await QRModel.findOne({ QrId: qrData });
-
-      if (!qrCodeInfo) {
-          return res.status(404).json({ error: 'QR code not found' });
-      }
-
-      res.json(qrCodeInfo); // Send the QR code information as a JSON response
-  } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'Server error' });
+    if (qrCode.additionalInfo && qrCode.additionalInfo.Name && qrCode.additionalInfo.BloodGroup) {
+      res.status(200).json({
+        success: true,
+        message: 'QR code is activated',
+        userData: qrCode.additionalInfo
+      });
+    } else {
+      return next(new AppError('QR not activated',201))
+    }
+  } catch (err) {
+    console.error(err);
+   return next(new AppError(`ERROR${err}`, 500))
   }
 };
 
 module.exports = { generateQr,
-                   scanQr,
-                   checkAlloted };
+                   scanQr };

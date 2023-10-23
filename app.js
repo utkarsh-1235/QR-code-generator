@@ -34,6 +34,10 @@ app.use(cookieParser());   // Third-party middleware
     next();
   });
 
+  app.use((err, req, res, next) => {
+    console.error(err.stack); // Log the error for debugging
+    res.status(500).json({ error: 'Internal Server Error' });
+  });
  //auth route
  const Client = new twilio(process.env.ACCOUNT_SID, process.env.AUTH_TOKEN); // Twilio client setup
  app.post('/api/v1/users/send-otp',async (req, res, next) => {
@@ -66,7 +70,7 @@ const formattedPhoneNumber = `+${normalizedCountryCode}${phoneNumber}`;
     if (!existingUser) {
       // If the user does not exist, create a new user with the phone number
       const newUser = new userModel({
-        phoneNumber: phoneNumber,
+        phoneNumber: formattedPhoneNumber,
         countryCode: countryCode
       });
 
@@ -181,7 +185,7 @@ app.post("/api/v1/users/verify-otp",async (req, res, next) => {
     .then(async (verificationCheck) => {
       if (verificationCheck.status === 'approved') {
         // Update the user's verified status in the database
-        const user = await userModel.findOne({ phoneNumber });
+        const user = await userModel.findOne({ phoneNumber: formattedPhoneNumber });
         console.log(user);
           if(user){
             user.verified = true;
@@ -191,7 +195,7 @@ app.post("/api/v1/users/verify-otp",async (req, res, next) => {
         return res.status(200).json({
           success: true,
           message: 'OTP verification successful.',
-          phoneNumber,
+          phoneNumber: formattedPhoneNumber,
           otp,
           verified: true,
         });
@@ -324,6 +328,8 @@ app.post("/api/v1/users/verify-otp",async (req, res, next) => {
       return next(new AppError('Failed to edit user', 500));
     }
   })
+ 
+  
  //qr Route
  app.use('/api/v1/qr',QrRoute);
 
