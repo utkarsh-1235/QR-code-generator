@@ -18,21 +18,36 @@ const Client = new twilio(process.env.ACCOUNT_SID, process.env.AUTH_TOKEN); // T
 
 const sendOtp = async (req, res, next) => {
   try {
-    const { phoneNumber} = req.body;
+    const { countryCode, phoneNumber} = req.body;
     console.log(phoneNumber);
+    console.log(countryCode);
 
-    if (!phoneNumber) {
-      return next(new AppError('Phone Number required.', 400));
+    if (!phoneNumber || ! countryCode) {
+      return next(new AppError('Both Country code and Phone Number required.', 400));
     }
+   
+    // Normalize the country code to the two-letter ISO country code
+// Normalize the country code
+const normalizedCountryCode = countryCode.replace('+', '');
+
+// Ensure the country code is in the correct format
+if (!/^\d+$/.test(normalizedCountryCode)) {
+  return next(new AppError('Invalid country code.', 400));
+}
+
+// Format the phone number to E.164 format
+const formattedPhoneNumber = `+${normalizedCountryCode}${phoneNumber}`;
+       
 
     // Check if the user with the given phone number already exists
-    const existingUser = await userModel.findOne({ phoneNumber });
-    console.log("ExistingUser", existingUser);
+    const existingUser = await userModel.findOne({ phoneNumber: formattedPhoneNumber });
+//    console.log("ExistingUser", existingUser);
 
     if (!existingUser) {
       // If the user does not exist, create a new user with the phone number
       const newUser = new userModel({
-        phoneNumber
+        phoneNumber: formattedPhoneNumber,
+        countryCode: countryCode
       });
 
       await newUser.save();
@@ -40,7 +55,7 @@ const sendOtp = async (req, res, next) => {
       // Continue with sending the OTP
       Client.verify.v2.services(process.env.VERIFY_SERVICE_SID)
         .verifications
-        .create({ to: phoneNumber, channel: 'sms' })
+        .create({ to: formattedPhoneNumber, channel: 'sms', validity_period: 600 })
         .then((verification) => {
           console.log(verification.status);
           res.status(200).json({
@@ -48,73 +63,123 @@ const sendOtp = async (req, res, next) => {
             message: 'OTP sent successfully.',
             newUser
           });
+        
         })
         .catch((err) => {
           console.error(err);
           return next(new AppError('Failed to send OTP.', 500));
         });
-    } else if (!existingUser.verified) {
-      // Handle the case where the user exists but is not verified
-      // You might choose to resend the OTP or return an error
-      
-      Client.verify.v2.services(process.env.VERIFY_SERVICE_SID)
-    .verifications
-    .create({ to: phoneNumber, channel: 'sms' })
-    .then((verification) => {
-      console.log(verification.status);
-      res.status(200).json({
-        success: true,
-        message: 'OTP resent successfully.',
-        phoneNumber
-      });
-    })
-    .catch((err) => {
-      console.error(err);
-      return next(new AppError('Failed to resend OTP.', 500));
-    });
-    } else {
-      // The user is already verified, return an appropriate response
-      res.status(200).json({
-        success: true,
-        message: 'User is already verified.',
-        phoneNumber
-      });
-    }
+      }
+    
   } catch (err) {
     console.error(err);
     return next(new AppError('Failed to send OTP.', 500));
   }
-};
+}
 
 
+ const resendOtp = async (req, res, next) => {
+  try {
+    const { countryCode, phoneNumber } = req.body;
 
- 
+    if (!countryCode || !phoneNumber) {
+      return next(new AppError('Country code and Phone Number is required.', 400));
+    }
+
+    // Normalize the country code to the two-letter ISO country code
+// Normalize the country code
+const normalizedCountryCode = countryCode.replace('+', '');
+
+// Ensure the country code is in the correct format
+if (!/^\d+$/.test(normalizedCountryCode)) {
+  return next(new AppError('Invalid country code.', 400));
+}
+
+// Format the phone number to E.164 format
+const formattedPhoneNumber = `+${normalizedCountryCode}${phoneNumber}`;
+       
+
+    // Check if the user with the given phone number already exists
+    const existingUser = await userModel.findOne({ phoneNumber: formattedPhoneNumber });
+      
+    console.log(existingUser);
+
+    if (!existingUser) {
+      return next(new AppError('User not found.', 404));
+    }
+
+    if (!existingUser.verified) {
+      // The user is not verified, send a new OTP
+      Client.verify.v2.services(process.env.VERIFY_SERVICE_SID)
+        .verifications
+        .create({ to: formattedPhoneNumber, channel: 'sms',validity_period: 600 })
+        .then((verification) => {
+          console.log(verification.status);
+          res.status(200).json({
+            success: true,
+            message: 'OTP resent successfully.',
+            phoneNumber: formattedPhoneNumber
+          });
+        })
+        .catch((err) => {
+          console.error(err);
+          return next(new AppError('Failed to resend OTP.', 500));
+        });
+    } else {
+      // The user is already verified, no need to resend OTP
+      res.status(200).json({
+        success: true,
+        message: 'User is already verified.',
+        phoneNumber: formattedPhoneNumber
+      });
+    }
+  } catch (err) {
+    console.error(err);
+    return next(new AppError('Failed to resend OTP.', 500));
+  }
+}
 
 const verifyOtp = async (req, res, next) => {
-  const phoneNumber = req.body.phoneNumber;
-  const otpCode = req.body.otpCode;
-
-  if (!phoneNumber || !otpCode) {
-    return next(new AppError('Phone number and OTP code are required.', 400));
+  
+  const {phoneNumber, countryCode, otp} = req.body;
+   console.log(phoneNumber);
+    console.log(otp);
+  if (!phoneNumber || !countryCode || !otp) {
+    return next(new AppError(' Phone Number and OTP code are required.', 400));
   }
+  const normalizedCountryCode = countryCode.replace('+', '');
 
+  // Ensure the country code is in the correct format
+  if (!/^\d+$/.test(normalizedCountryCode)) {
+    return next(new AppError('Invalid country code.', 400));
+  }
+  
+  // Format the phone number to E.164 format
+  const formattedPhoneNumber = `+${normalizedCountryCode}${phoneNumber}`;
+    
+  const user = await userModel.findOne({ phoneNumber: formattedPhoneNumber });
+
+  if(user.verified === true){
+    return next(new AppError('Already verified',401));
+  }
   Client.verify.v2.services(process.env.VERIFY_SERVICE_SID)
     .verificationChecks
-    .create({ to: phoneNumber, code: otpCode })
+    .create({ to: formattedPhoneNumber, code: otp })
     .then(async (verificationCheck) => {
       if (verificationCheck.status === 'approved') {
         // Update the user's verified status in the database
-        const user = await userModel.findOne({ phoneNumber });
+    
+        
           if(user){
             user.verified = true;
             await user.save();
           }
-        
+          console.log(user);
         return res.status(200).json({
           success: true,
           message: 'OTP verification successful.',
-          phoneNumber,
-          otpCode,
+          phoneNumber: formattedPhoneNumber,
+          otp,
           verified: true,
         });
       } else {
@@ -122,128 +187,50 @@ const verifyOtp = async (req, res, next) => {
       }
     })
     .catch((err) => {
-      return next(new AppError('Failed to verify OTP.', 500));
+      return next(new AppError(`ERROR${err}`, 500));
     });
-};
-
-
-const activateUser = async (req, res, next) => {
-  
-  const QrId = req.params.qrId;
-  const {Name, age, BloodGroup, preMedicalInfo, EmergencyContact } = req.body;
-
-  console.log(Name, age, BloodGroup, preMedicalInfo, EmergencyContact);
-
-  if (!QrId || !Name || !age || !BloodGroup || !preMedicalInfo || !EmergencyContact ) {
-    return next(new AppError('Enter all the required fields', 400));
-  }
-
-  try {
-    // Find the QR code document by QrId (assuming it's unique)
-    const qrCode = await QRModel.findOne({ QrId });
-         
-    console.log(qrCode);
-
-    if (!qrCode) {
-      return next(new AppError('QR code not found', 404));
-    }
-
-   if (qrCode.additionalInfo && qrCode.additionalInfo.Name && qrCode.additionalInfo.BloodGroup) {
-  return next(new AppError('QR code has already been allotted', 400));
 }
 
-    
- //   const user = req.user; // Assuming you have the user object in the request
-    qrCode.additionalInfo = {
-      Name,
-      age,
-      BloodGroup,
-      preMedicalInfo,
-      //vehicleNumber,
-      EmergencyContact,
-    };
-;
-    // Save the updated QR code document
-    await qrCode.save();
+const userExist = async(req, res, next)=>{
+  try{
+    const { countryCode, phoneNumber } = req.body;
 
-    res.status(200).json({
-      success: true,
-      message: 'User activated successfully.',
-      qrCode,
-    });
-  } catch (error) {
-    console.error('Error in activating user:', error);
-    return next(new AppError('Failed to activate user', 500));
-  }
-}
-
-
-const editQr = async (req, res, next) => {
-  const QrId = req.params.qrId;
-  const {Name, BloodGroup, preMedicalInfo, EmergencyContact, vehicleNumber } = req.body;
-
-  if (!QrId && !Name && !BloodGroup && !preMedicalInfo && !EmergencyContact && !vehicleNumber) {
-    return next(new AppError('Enter all the required fields', 400));
-  }
-
-  try {
-    // Find the QR code document by ID
-    const qrCode = await QRModel.findOne({ QrId: QrId });
-
-    if (!qrCode) {
-      return next(new AppError('QR code not found', 404));
+    if (!countryCode || !phoneNumber) {
+      return next(new AppError('Country code and Phone Number is required.', 400));
     }
-
-    // Update all fields
-    qrCode.additionalInfo = {
-      Name,
-      BloodGroup,
-      preMedicalInfo,
-      vehicleNumber,
-      EmergencyContact,
-    };
-
-    // Save the updated QR code document
-    await qrCode.save();
-
-    res.status(200).json({
-      success: true,
-      message: 'User edited successfully.',
-      qrCode,
-    });
-  } catch (error) {
-    console.error('Error editing user:', error);
-    return next(new AppError('Failed to edit user', 500));
+  
+    // Normalize the country code to the two-letter ISO country code
+  // Normalize the country code
+  const normalizedCountryCode = countryCode.replace('+', '');
+  
+  // Ensure the country code is in the correct format
+  if (!/^\d+$/.test(normalizedCountryCode)) {
+  return next(new AppError('Invalid country code.', 400));
   }
-};
-
   
-/******************************************************
-   * @LOGOUT
-   * @route /api/auth/logout
-   * @method GET
-   * @description Remove the token form  cookie
-   * @returns logout message and cookie without token
-   ******************************************************/
+  // Format the phone number to E.164 format
+  const formattedPhoneNumber = `+${normalizedCountryCode}${phoneNumber}`;
+       
   
-const logout =  (req, res) => {
-  res.cookie('token', null, {
-    secure: true,
-    maxAge: 0,
-    httpOnly: true
-  });
+    // Check if the user with the given phone number already exists
+    const existingUser = await userModel.findOne({ phoneNumber: formattedPhoneNumber });
+      
+    console.log(existingUser);
+    if(existingUser){
+      res.status(200).json({
+        success: true,
+        message: "user already exist"
+      })
+    }
+  }
+  catch(err){
+     return next(new AppError(`ERROR${err}`,500));
+  }
 
-  res.status(200).json({
-    success: true,
-    message: 'User logged out successfully'
-  })
-};
-
+}
 module.exports = {
     sendOtp,
+    resendOtp,
     verifyOtp,
-    activateUser,
-    editQr,
-    logout
-
+    userExist
 }

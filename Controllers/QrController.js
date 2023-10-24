@@ -51,7 +51,7 @@ const formattedPhoneNumber = `+${normalizedCountryCode}${phoneNumber}`;
       const qrCodeJimp = await Jimp.read(qrCodeImage);
 
       // Overlay the unique object ID on the QR code
-      qrCodeJimp.print(await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK), 10, 10, uniqueID);
+      qrCodeJimp.print(await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK), 10, 180, uniqueID);
 
       // Save the updated QR code with the unique object ID
       const qrCodeImageWithID = `qrcodes/qr_code_${i}_with_id.png`;
@@ -60,8 +60,8 @@ const formattedPhoneNumber = `+${normalizedCountryCode}${phoneNumber}`;
       // Upload QR code with the unique object ID to Cloudinary
       const cloudinaryResponse = await cloudinary.uploader.upload(qrCodeImageWithID, {
         folder: 'QR',
-        width: 100,
-        height: 100,
+        width: 300,
+        height: 300,
       });
 
       // Save QR code data and Cloudinary URL to the database
@@ -117,5 +117,86 @@ const formattedPhoneNumber = `+${normalizedCountryCode}${phoneNumber}`;
   }
 };
 
+const activateUser = async (req, res, next) => {
+  console.log(req.body);
+  const QrId = req.params.qrId;
+  const {Name, age, BloodGroup, preMedicalInfo, EmergencyContact } = req.body;
+
+  console.log(Name, age, BloodGroup, preMedicalInfo, EmergencyContact);
+
+  if (!QrId || !Name || !age || !BloodGroup || !preMedicalInfo || !EmergencyContact ) {
+    return next(new AppError('Enter all the required fields', 400));
+  }
+
+  try {
+    // Find the QR code document by QrId (assuming it's unique)
+    const qrCode = await QRModel.findOne({ QrId });
+         
+    console.log(qrCode);
+
+    if (!qrCode) {
+      return next(new AppError('QR code not found', 404));
+    }
+
+   if (qrCode.additionalInfo && qrCode.additionalInfo.Name && qrCode.additionalInfo.BloodGroup) {
+  return next(new AppError('QR code has already been allotted', 400));
+}
+
+    
+ //   const user = req.user; // Assuming you have the user object in the request
+    qrCode.additionalInfo = {
+      Name,
+      age,
+      BloodGroup,
+      preMedicalInfo,
+      //vehicleNumber,
+      EmergencyContact,
+    };
+;
+    // Save the updated QR code document
+    await qrCode.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'User activated successfully.',
+      qrCode,
+    });
+  } catch (error) {
+    console.error('Error in activating user:', error);
+    return next(new AppError('Failed to activate user', 500));
+  }
+}
+
+const checkQr = async(req, res, next) => {
+  try{
+    const qrId = req.body.userID;
+console.log(qrId);
+  // Search for the user with the provided ID in the 'users' array
+  const user = await QRModel.findOne({QrId:qrId});
+  if (user) {
+    console.log(user.additionalInfo);
+    
+    if(user.additionalInfo.name && user.additionalInfo.age){
+      return res.status(200).json({
+        success: true,
+        message: " Sorry user already allotted",
+        user: user
+      })
+      }
+      else if(!user.additionalInfo){
+        return res.status(401).json({
+          success: false,
+          message: "Yes you can fill the detail"
+        })
+      }
+    
+  } 
+}
+  catch(err){
+     next(new AppError(err.message, 500))
+  }
+}
 module.exports = { generateQr,
-                   scanQr };
+                   scanQr,
+                  activateUser,
+                checkQr };

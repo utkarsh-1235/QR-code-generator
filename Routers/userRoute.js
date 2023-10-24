@@ -10,18 +10,15 @@ const authRoute = express.Router();
 const {
        sendOtp,
        verifyOtp,
-       activateUser,
-       logout,
-       editQr} = require('../Controllers/userController');
+       resendOtp} = require('../Controllers/userController');
 const checkQr = require('../Middleware/checkmiddleware');
 
 
 
 authRoute.post('/send-otp', sendOtp);
-authRoute.post('/logout', logout);
+authRoute.post('/resend-otp',resendOtp);
 authRoute.post('/verify-otp', verifyOtp);
 
-authRoute.post('/activate/:qrId', activateUser)
          
 
 
