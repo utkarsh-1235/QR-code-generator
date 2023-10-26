@@ -12,9 +12,15 @@ const userSchema = new Schema({
     required: true,
     unique: true
   },
-  countryCode:{
+  // countryCode:{
+  //   type: String,
+  //   required: true
+  // },
+  name:{
     type: String,
-    required: true
+  },
+  email:{
+    type: String
   },
   verified:{
     type: Boolean,

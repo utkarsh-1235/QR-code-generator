@@ -10,14 +10,20 @@ const authRoute = express.Router();
 const {
        sendOtp,
        verifyOtp,
-       resendOtp} = require('../Controllers/userController');
-const checkQr = require('../Middleware/checkmiddleware');
+       resendOtp,
+       userExist,
+       register} = require('../Controllers/userController');
+const { editQr } = require('../Controllers/QrController');
+
 
 
 
 authRoute.post('/send-otp', sendOtp);
 authRoute.post('/resend-otp',resendOtp);
 authRoute.post('/verify-otp', verifyOtp);
+authRoute.post('/user-exist',userExist);
+authRoute.post('/register', register);
+authRoute.patch('/edit-qr',editQr);
 
          
 

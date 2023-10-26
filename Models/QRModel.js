@@ -28,6 +28,9 @@ const QRSchema = new Schema({
      type: String,
      required: true
    },
+   userPhoneNumbers:{
+      type: String, // Assuming the user's phone number is a string
+    },
    additionalInfo:{
       Name:{
         type: String

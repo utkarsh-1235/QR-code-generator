@@ -40,18 +40,19 @@ const formattedPhoneNumber = `+${normalizedCountryCode}${phoneNumber}`;
        
 
     // Check if the user with the given phone number already exists
-    const existingUser = await userModel.findOne({ phoneNumber: formattedPhoneNumber });
+    const existingUser = await userModel.findOne({ phoneNumber: phoneNumber });
 //    console.log("ExistingUser", existingUser);
-
+       
+let newUser;
     if (!existingUser) {
       // If the user does not exist, create a new user with the phone number
-      const newUser = new userModel({
-        phoneNumber: formattedPhoneNumber,
+       newUser = new userModel({
+        phoneNumber: phoneNumber,
         countryCode: countryCode
       });
 
       await newUser.save();
-
+    }
       // Continue with sending the OTP
       Client.verify.v2.services(process.env.VERIFY_SERVICE_SID)
         .verifications
@@ -67,9 +68,9 @@ const formattedPhoneNumber = `+${normalizedCountryCode}${phoneNumber}`;
         })
         .catch((err) => {
           console.error(err);
-          return next(new AppError('Failed to send OTP.', 500));
+          return next(new AppError(`Error${err}`, 404));
         });
-      }
+      
     
   } catch (err) {
     console.error(err);
@@ -100,7 +101,7 @@ const formattedPhoneNumber = `+${normalizedCountryCode}${phoneNumber}`;
        
 
     // Check if the user with the given phone number already exists
-    const existingUser = await userModel.findOne({ phoneNumber: formattedPhoneNumber });
+    const existingUser = await userModel.findOne({ phoneNumber: phoneNumber });
       
     console.log(existingUser);
 
@@ -157,11 +158,11 @@ const verifyOtp = async (req, res, next) => {
   // Format the phone number to E.164 format
   const formattedPhoneNumber = `+${normalizedCountryCode}${phoneNumber}`;
     
-  const user = await userModel.findOne({ phoneNumber: formattedPhoneNumber });
+  const user = await userModel.findOne({ phoneNumber: phoneNumber });
 
-  if(user.verified === true){
-    return next(new AppError('Already verified',401));
-  }
+  // if(user.verified === true){
+  //   return next(new AppError('Already verified',401));
+  // }
   Client.verify.v2.services(process.env.VERIFY_SERVICE_SID)
     .verificationChecks
     .create({ to: formattedPhoneNumber, code: otp })
@@ -171,7 +172,7 @@ const verifyOtp = async (req, res, next) => {
     
         
           if(user){
-            user.verified = true;
+            // user.verified = true;
             await user.save();
           }
           console.log(user);
@@ -180,7 +181,7 @@ const verifyOtp = async (req, res, next) => {
           message: 'OTP verification successful.',
           phoneNumber: formattedPhoneNumber,
           otp,
-          verified: true,
+          // verified: true,
         });
       } else {
         return next(new AppError('Incorrect OTP. Please try again.', 401));
@@ -201,36 +202,92 @@ const userExist = async(req, res, next)=>{
   
     // Normalize the country code to the two-letter ISO country code
   // Normalize the country code
-  const normalizedCountryCode = countryCode.replace('+', '');
+  // const normalizedCountryCode = countryCode.replace('+', '');
   
-  // Ensure the country code is in the correct format
-  if (!/^\d+$/.test(normalizedCountryCode)) {
-  return next(new AppError('Invalid country code.', 400));
-  }
+  // // Ensure the country code is in the correct format
+  // if (!/^\d+$/.test(normalizedCountryCode)) {
+  // return next(new AppError('Invalid country code.', 400));
+  // }
   
-  // Format the phone number to E.164 format
-  const formattedPhoneNumber = `+${normalizedCountryCode}${phoneNumber}`;
+  // // Format the phone number to E.164 format
+  // const formattedPhoneNumber = `+${normalizedCountryCode}${phoneNumber}`;
        
   
     // Check if the user with the given phone number already exists
-    const existingUser = await userModel.findOne({ phoneNumber: formattedPhoneNumber });
+    const existingUser = await userModel.findOne({ phoneNumber: phoneNumber});
       
     console.log(existingUser);
-    if(existingUser){
-      res.status(200).json({
+    if(existingUser.verified){
+      console.log("user verified")
+      return res.status(200).json({
         success: true,
-        message: "user already exist"
+        message: "user already exist",
+        existingUser
       })
     }
+    else if (!existingUser.verified){
+      console.log("user not verified")
+      return res.status(200).json({
+        success: false,
+        message: "user not exist",
+        existingUser
+     })
+    }
+     
   }
   catch(err){
      return next(new AppError(`ERROR${err}`,500));
   }
 
 }
+
+const register = async(req, res, next)=>{
+  try{
+        
+    const {countryCode, phoneNumber, name, email} = req.body;
+    console.log(phoneNumber, name, email);
+
+    if(!countryCode || !phoneNumber || !name){
+      return next(new AppError('country code ,phone number and name required',400));
+
+    }
+
+  //   const normalizedCountryCode = countryCode.replace('+', '');
+
+  // // Ensure the country code is in the correct format
+  // if (!/^\d+$/.test(normalizedCountryCode)) {
+  //   return next(new AppError('Invalid country code.', 400));
+  // }
+  
+  // // Format the phone number to E.164 format
+  // const formattedPhoneNumber = `+${normalizedCountryCode}${phoneNumber}`;
+
+  const updateUser = await userModel.findOneAndUpdate(
+    { phoneNumber: phoneNumber },
+    { name: name, email: email, verified:true }
+  );
+    
+   await updateUser.save();
+
+   if (!updateUser) {
+    return next(new AppError('You are not permitted to come to this page; go back', 401));
+  }
+  
+   return res.status(200).json({
+     success: true,
+     message: 'You are successfully registered'
+   })
+  }
+  catch(err){
+    return next(new AppError(`ERROR${err.message}`,500))
+  }
+    
+}
+
 module.exports = {
     sendOtp,
     resendOtp,
     verifyOtp,
-    userExist
+    userExist,
+    register
 }

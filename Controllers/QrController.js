@@ -117,44 +117,40 @@ const formattedPhoneNumber = `+${normalizedCountryCode}${phoneNumber}`;
   }
 };
 
+
 const activateUser = async (req, res, next) => {
   console.log(req.body);
   const QrId = req.params.qrId;
-  const {Name, age, BloodGroup, preMedicalInfo, EmergencyContact } = req.body;
+  const { Name, age, countryCode, phoneNumber, BloodGroup, preMedicalInfo, EmergencyContact } = req.body;
 
-  console.log(Name, age, BloodGroup, preMedicalInfo, EmergencyContact);
+  console.log(Name, age, countryCode, phoneNumber, BloodGroup, preMedicalInfo, EmergencyContact);
 
-  if (!QrId || !Name || !age || !BloodGroup || !preMedicalInfo || !EmergencyContact ) {
+  if (!QrId || !Name || !countryCode || !phoneNumber || !age || !BloodGroup || !preMedicalInfo || !EmergencyContact) {
     return next(new AppError('Enter all the required fields', 400));
   }
 
   try {
     // Find the QR code document by QrId (assuming it's unique)
     const qrCode = await QRModel.findOne({ QrId });
-         
-    console.log(qrCode);
+
+    
 
     if (!qrCode) {
       return next(new AppError('QR code not found', 404));
     }
-
-   if (qrCode.additionalInfo && qrCode.additionalInfo.Name && qrCode.additionalInfo.BloodGroup) {
-  return next(new AppError('QR code has already been allotted', 400));
-}
-
-    
- //   const user = req.user; // Assuming you have the user object in the request
+  
+  qrCode.userPhoneNumbers = phoneNumber 
+  
     qrCode.additionalInfo = {
       Name,
       age,
       BloodGroup,
       preMedicalInfo,
-      //vehicleNumber,
       EmergencyContact,
     };
-;
     // Save the updated QR code document
     await qrCode.save();
+    console.log(qrCode);
 
     res.status(200).json({
       success: true,
@@ -165,30 +161,95 @@ const activateUser = async (req, res, next) => {
     console.error('Error in activating user:', error);
     return next(new AppError('Failed to activate user', 500));
   }
+};
+
+const editQr = async (req, res, next) => {
+  const QrId = req.params.qrId;
+  const {Name, age, BloodGroup, preMedicalInfo, EmergencyContact, vehicleNumber } = req.body;
+
+  if (!QrId && !Name && !age && !BloodGroup && !preMedicalInfo && !EmergencyContact && !vehicleNumber) {
+    return next(new AppError('Give Information to edit', 400));
+  }
+
+  try {
+    // Find the QR code document by ID
+    const qrCode = await QRModel.findOne({ QrId: QrId });
+
+    if (!qrCode) {
+      return next(new AppError('QR code not found', 404));
+    }
+
+    // Update all fields
+    qrCode.additionalInfo = {
+      Name,
+      age,
+      BloodGroup,
+      preMedicalInfo,
+      vehicleNumber,
+      EmergencyContact,
+    };
+
+    // Save the updated QR code document
+    await qrCode.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'User edited successfully.',
+      qrCode,
+    });
+  } catch (error) {
+    console.error('Error editing user:', error);
+    return next(new AppError('Failed to edit user', 500));
+  }
 }
+
+const getQr = async (req, res, next) => {
+  try {
+    const { phoneNumber } = req.body;
+
+    if (!phoneNumber) {
+      return next(new AppError('Phone Number is required', 400));
+    }
+
+    // Find all QR codes where userPhoneNumbers array contains the provided phoneNumber
+    const qrCodes = await QRModel.find({ userPhoneNumbers: phoneNumber });
+
+    if (qrCodes.length === 0) {
+      return next(new AppError('No QR codes found for the provided phone number', 404));
+    }
+      console.log(qrCodes);
+    res.status(200).json({
+      success: true,
+      message: 'QR codes retrieved successfully.',
+      qrCodes,
+    });
+  } catch (err) {
+    return next(new AppError(`ERROR: ${err}`, 500));
+  }
+};
 
 const checkQr = async(req, res, next) => {
   try{
-    const qrId = req.body.userID;
+    const qrId = req.params.qrId;
 console.log(qrId);
   // Search for the user with the provided ID in the 'users' array
   const user = await QRModel.findOne({QrId:qrId});
   if (user) {
     console.log(user.additionalInfo);
     
-    if(user.additionalInfo.name && user.additionalInfo.age){
+    if(user.additionalInfo.Name && user.additionalInfo.age){
       return res.status(200).json({
         success: true,
-        message: " Sorry user already allotted",
+        message: " Sorry Qr already allotted",
         user: user
       })
       }
-      else if(!user.additionalInfo){
-        return res.status(401).json({
-          success: false,
+
+        return res.status(201).json({
+          success: true,
           message: "Yes you can fill the detail"
         })
-      }
+
     
   } 
 }
@@ -199,4 +260,6 @@ console.log(qrId);
 module.exports = { generateQr,
                    scanQr,
                   activateUser,
-                checkQr };
+                  editQr,
+                checkQr,
+              getQr };
