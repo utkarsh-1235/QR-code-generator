@@ -9,6 +9,6 @@ QrRoute.get('/scan/:qrId',scanQr);
 QrRoute.post('/activate/:qrId', activateUser);
 QrRoute.post('/check-qr-allotment/:qrId', checkQr);
 QrRoute.post('/get-qr', getQr);
-QrRoute.put('/edit-qr', editQr);
+QrRoute.post('/edit-qr', editQr);
 
 module.exports = QrRoute;

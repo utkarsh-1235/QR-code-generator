@@ -121,7 +121,7 @@ const formattedPhoneNumber = `+${normalizedCountryCode}${phoneNumber}`;
 const activateUser = async (req, res, next) => {
   console.log(req.body);
   const QrId = req.params.qrId;
-  const { Name, age, countryCode, phoneNumber, BloodGroup, preMedicalInfo, EmergencyContact } = req.body;
+  const { Name, age, countryCode, phoneNumber, BloodGroup, vehicleNumber, preMedicalInfo, EmergencyContact } = req.body;
 
   console.log(Name, age, countryCode, phoneNumber, BloodGroup, preMedicalInfo, EmergencyContact);
 
@@ -145,6 +145,7 @@ const activateUser = async (req, res, next) => {
       Name,
       age,
       BloodGroup,
+      vehicleNumber,
       preMedicalInfo,
       EmergencyContact,
     };

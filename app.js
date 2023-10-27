@@ -9,6 +9,7 @@ const app = new express();
 const QrRoute = require('./Routers/QrRoute');
  const errorMiddleware = require('./Middleware/errorMiddleware');
  const AppError = require('./Utils/error.util');
+const QRModel = require('./Models/QRModel');
 
 // const paymentRoute = require('./Route/paymentRoute');
 
@@ -31,40 +32,16 @@ app.use(cookieParser());   // Third-party middleware
     next();
   });
 
+  app.use((err, req, res, next) => {
+    // Handle errors and send an appropriate response
+    console.error(err); // Log the error
+    res.status(500).json({ error: 'Internal Server Error' });
+  });
 
  //auth route
-
  app.use('/api/v1/users',userAuthRoute);
 
-  app.post('/api/v1/users/check-qr-allotment', async(req, res, next) => {
-    try{
-      const qrId = req.body.userID;
-  console.log(qrId);
-    // Search for the user with the provided ID in the 'users' array
-    const user = await QRModel.findOne({QrId:qrId});
-    if (user) {
-      console.log(user.additionalInfo);
-      
-      if(user.additionalInfo.name && user.additionalInfo.age){
-        return res.status(200).json({
-          success: true,
-          message: " Sorry user already allotted",
-          user: user
-        })
-        }
-        else if(!user.additionalInfo){
-          return res.status(401).json({
-            success: false,
-            message: "Yes you can fill the detail"
-          })
-        }
-      
-    } 
-}
-    catch(err){
-       next(new AppError(err.message, 500))
-    }
-  })
+  
 
 
   app.patch('api/v1/users/edit-qr',async (req, res, next) => {
@@ -114,7 +91,13 @@ app.use(cookieParser());   // Third-party middleware
 const static_path = path.join(__dirname, '../client');
 app.use(express.static(static_path));
 // console.log(path.join(__dirname));
+app.get('/dashboard', (req, res) => {
+  res.sendFile(path.join(static_path, 'dashboard.html'));
+});
 
+app.get('/signupdetails', (req, res) => {
+  res.sendFile(path.join(static_path, 'signupdetails.html'));
+});
 app.all('*',(req, res)=>{
     res.status(400).json('OOPS 404 not found')
 })
