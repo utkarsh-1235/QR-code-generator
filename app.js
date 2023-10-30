@@ -41,51 +41,7 @@ app.use(cookieParser());   // Third-party middleware
  //auth route
  app.use('/api/v1/users',userAuthRoute);
 
-  
-
-
-  app.patch('api/v1/users/edit-qr',async (req, res, next) => {
-    const QrId = req.params.qrId;
-    const {Name, age, BloodGroup, preMedicalInfo, EmergencyContact, vehicleNumber } = req.body;
-  
-    if (!QrId && !Name && !age && !BloodGroup && !preMedicalInfo && !EmergencyContact && !vehicleNumber) {
-      return next(new AppError('Give Information to edit', 400));
-    }
-  
-    try {
-      // Find the QR code document by ID
-      const qrCode = await QRModel.findOne({ QrId: QrId });
-  
-      if (!qrCode) {
-        return next(new AppError('QR code not found', 404));
-      }
-  
-      // Update all fields
-      qrCode.additionalInfo = {
-        Name,
-        age,
-        BloodGroup,
-        preMedicalInfo,
-        vehicleNumber,
-        EmergencyContact,
-      };
-  
-      // Save the updated QR code document
-      await qrCode.save();
-  
-      res.status(200).json({
-        success: true,
-        message: 'User edited successfully.',
-        qrCode,
-      });
-    } catch (error) {
-      console.error('Error editing user:', error);
-      return next(new AppError('Failed to edit user', 500));
-    }
-  })
- 
-  
- //qr Route
+   //qr Route
  app.use('/api/v1/qr',QrRoute);
 
 const static_path = path.join(__dirname, '../client');

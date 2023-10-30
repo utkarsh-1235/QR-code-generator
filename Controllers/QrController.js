@@ -15,25 +15,25 @@ const generateQr = async (req, res, next) => {
       return next(new AppError('Phone Number and country code are required', 400));
     }
     
-    const normalizedCountryCode = countryCode.replace('+', '');
+//     const normalizedCountryCode = countryCode.replace('+', '');
 
-// Ensure the country code is in the correct format
-if (!/^\d+$/.test(normalizedCountryCode)) {
-  return next(new AppError('Invalid country code.', 400));
-}
+// // Ensure the country code is in the correct format
+// if (!/^\d+$/.test(normalizedCountryCode)) {
+//   return next(new AppError('Invalid country code.', 400));
+// }
 
-// Format the phone number to E.164 format
-const formattedPhoneNumber = `+${normalizedCountryCode}${phoneNumber}`;
-     console.log(formattedPhoneNumber)   ;
+// // Format the phone number to E.164 format
+// const formattedPhoneNumber = `+${normalizedCountryCode}${phoneNumber}`;
+//      console.log(formattedPhoneNumber)   ;
 
-    const permission = await userModel.findOne({phoneNumber: formattedPhoneNumber});
+    const permission = await userModel.findOne({phoneNumber: phoneNumber});
     console.log(permission);
     if (!permission ) {
       return next(new AppError("Unauthorized access", 401)); // Changed status code to 401 for unauthorized access
     }
     for (let i = 1; i <= 100; i++) {
       const uniqueID = shortid.generate(); // Generate a short unique object ID
-      const qrCodeUrl = `http://localhost:4000/api/v1/qr/scan/${uniqueID}`;
+      const qrCodeUrl = `http://192.168.1.11:4000/api/v1/qr/scan/${uniqueID}`;
       const options = {
         color: {
           dark: '#000000ff',

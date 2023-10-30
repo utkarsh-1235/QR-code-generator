@@ -30,7 +30,13 @@ const userSchema = new Schema({
     type: String,
     default: 'User',
     enum: ['User', 'Admin']
-  }
+  },
+  qrCodes: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'qr' // This should match the model name 'qr' in QRModel.js
+    }
+  ]
 }, { timestamps: true });
 
 

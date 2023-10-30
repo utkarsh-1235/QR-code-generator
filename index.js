@@ -22,7 +22,7 @@ cloudinary.v2.config({
 app.listen(port, host, async ()=>{
     //database connected
     await dbConnect();
-    console.log(`server is running at https://localhost/${port}`)
+    console.log(`server is running at https://192.168.1.11/${port}`)
 })
 
 // module.exports = RazorPay;
